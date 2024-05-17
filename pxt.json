@@ -1,6 +1,7 @@
 {
     "name": "ml-runner-poc",
-    "description": "",
+    "version": "0.0.1",
+    "description": "Experimental extension to run ML4F models in micro:bit MakeCode",
     "dependencies": {
         "core": "*",
         "radio": "*"
@@ -8,7 +9,7 @@
     "files": [
         "README.md",
         "shims.d.ts",
-        "main.ts",
+        "pxttest.ts",
         "pxtextension.ts",
         "pxtextension.cpp",
         "mlrunner.h",
@@ -26,6 +27,9 @@
         "target": "6.1.10",
         "pxt": "9.3.15"
     },
+    "supportedTargets": [
+        "microbit"
+    ],
     "yotta": {
         "config": {
             "codal": {

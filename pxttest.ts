@@ -8,8 +8,11 @@ input.onButtonPressed(Button.A, function () {
 input.onButtonPressed(Button.B, function () {
     basic.clearScreen()
 })
-mlrunner.onMlEvent(function () {
+mlrunner.onMlEvent(1, function () {
     basic.showIcon(IconNames.Heart)
+})
+mlrunner.onMlEvent(2, function () {
+    basic.showIcon(IconNames.SmallHeart)
 })
 
 basic.showNumber(mlrunner.inputLength())

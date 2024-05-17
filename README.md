@@ -1,7 +1,18 @@
-# Proof of Concept for a MakeCode extension to run ML models
+# Experimental MakeCode extension to run ML models with ML4F
 
-This project is left slim to be able to be imported in other MakeCode
-extensions and a MicroPython module.
+This project includes [ML4F](https://github.com/microsoft/ml4f) and a wrapper
+to invoke a known type of model. It is left slim to be able to be import it
+in other MakeCode extensions and a MicroPython module.
+
+## Developer considerations
+
+- Almost nothing implemented yet
+- Currently it embeds a model in a C file as an array with blob data
+- Due to the model size, BLE had to be disabled
+    - This currently doesn't work on live MAkeCode, only beta
+        - Actually it doesn't look like it works in beta either, just locally
+    - Adding other BLE extensions might fail
+- Only built and tested on micro:bit V2
 
 ## Use as Extension
 
