@@ -3,20 +3,34 @@
     "description": "",
     "dependencies": {
         "core": "*",
-        "radio": "*",
-        "microphone": "*"
+        "radio": "*"
     },
     "files": [
-        "main.blocks",
+        "README.md",
+        "shims.d.ts",
         "main.ts",
-        "README.md"
+        "pxtextension.ts",
+        "pxtextension.cpp",
+        "mlrunner.h",
+        "mlrunner.cpp",
+        "ml4f/ml4f.h",
+        "ml4f/ml4f.c",
+        "model-example/model_example.h",
+        "model-example/model_example.c"
     ],
     "targetVersions": {
-        "branch": "v6.0.28",
-        "tag": "v6.0.28",
-        "commits": "https://github.com/microsoft/pxt-microbit/commits/9d308fa3c282191768670a6558e4df8af2d715cf",
-        "target": "6.0.28",
-        "pxt": "9.0.19"
+        "targetId": "microbit",
+        "branch": "v6.1.10",
+        "tag": "v6.1.10",
+        "commits": "https://github.com/microsoft/pxt-microbit/commits/c2582013942681630496b1ab0659efb365181bc8",
+        "target": "6.1.10",
+        "pxt": "9.3.15"
     },
-    "preferredEditor": "blocksprj"
+    "yotta": {
+        "config": {
+            "codal": {
+                "BLE": 0
+            }
+        }
+    }
 }
