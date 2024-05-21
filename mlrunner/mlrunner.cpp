@@ -11,8 +11,8 @@
  * We call the "full model" the labels header + the ML4F model.
  */
 #include <stdlib.h>
-#include "model-example/model_example.h"
-#include "ml4f/ml4f.h"
+#include "model_example.h"
+#include "../ml4f/ml4f.h"
 #include "mlrunner.h"
 
 using namespace mlrunner;
@@ -20,8 +20,10 @@ using namespace mlrunner;
 // Linker symbols used to find the start of the model in flash.
 extern uint8_t  __etext, __data_start__, __data_end__;
 
+#if MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
 // Flag to control usage of model included in model_example.h/c
 static bool USE_BUILT_IN = true;
+#endif
 
 /*****************************************************************************/
 /* Private API                                                               */
@@ -35,9 +37,12 @@ static bool USE_BUILT_IN = true;
  * @return The start address to where the full model is stored in flash.
  */
 static uint32_t get_full_model_start_address() {
+#if MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
     if (USE_BUILT_IN) {
         return (uint32_t)model_example;
     }
+#endif
+
     // The last section in FLASH is meant to be text, but data section contents
     // are placed immediately after it (to be copied to RAM), but there isn't
     // a symbol to indicate its end in FLASH, so we calculate how long data is
@@ -92,9 +97,11 @@ static ml4f_header_t* get_ml4f_model() {
 /*****************************************************************************/
 /* Public API                                                                */
 /*****************************************************************************/
+#if MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
 void mlrunner::ml_useBuiltInModel(bool use) {
     USE_BUILT_IN = use;
 }
+#endif
 
 bool mlrunner::ml_isModelPresent() {
     ml_model_header_t *model_header = get_model_header();

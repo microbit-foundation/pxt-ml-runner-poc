@@ -1,4 +1,6 @@
-#include "model_example.h"
+#pragma once
+
+#if MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
 
 #define ml4f_model_example_header_len   52
 #define ml4f_model_example_size         13852
@@ -1763,3 +1765,4 @@ const unsigned int model_example[ml4f_full_model_size] = {
     0x3e637806, 0xbd98ec6e, 0x3c4d37cc, 0xbdf9df27, 0x3e9989b7, 0x3f06e7c8, 0xbe9453e9, 0x3eb7a815, 
     0xba16641b, 0x00000000, 0x00000000, 0x00000000, 
 };
+#endif

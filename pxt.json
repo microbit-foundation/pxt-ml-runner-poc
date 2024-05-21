@@ -12,12 +12,11 @@
         "pxttest.ts",
         "pxtextension.ts",
         "pxtextension.cpp",
-        "mlrunner.h",
-        "mlrunner.cpp",
+        "mlrunner/mlrunner.h",
+        "mlrunner/mlrunner.cpp",
+        "mlrunner/model_example.h",
         "ml4f/ml4f.h",
-        "ml4f/ml4f.c",
-        "model-example/model_example.h",
-        "model-example/model_example.c"
+        "ml4f/ml4f.c"
     ],
     "targetVersions": {
         "targetId": "microbit",
@@ -30,10 +29,14 @@
     "supportedTargets": [
         "microbit"
     ],
+    "disablesVariants": [
+        "mbdal"
+    ],
     "yotta": {
         "config": {
             "codal": {
-                "BLE": 0
+                "BLE": 0,
+                "MLRUNNER_INCLUDE_MODEL_EXAMPLE": 1
             }
         }
     }

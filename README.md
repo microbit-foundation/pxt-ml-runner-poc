@@ -12,6 +12,8 @@ in other MakeCode extensions and a MicroPython module.
     - This currently doesn't work on live MAkeCode, only beta
         - Actually it doesn't look like it works in beta either, just locally
     - Adding other BLE extensions might fail
+- The [GH issue tracker](https://github.com/microbit-foundation/pxt-ml-runner-poc/issues/)
+  contains issues that could be encountered and workarounds 
 - Only built and tested on micro:bit V2
 
 ## Use as Extension
@@ -53,7 +55,6 @@ PXT_FORCE_LOCAL=1 PXT_NODOCKER=1 PXT_COMPILE_SWITCHES=csv---mbcodal npx pxt
 > https://github.com/microsoft/pxt-microbit/pull/5481
 
 
-#### Metadata (used for search, rendering)
+#### Metadata (used for search)
 
-* for PXT/
-<script src="https://makecode.com/gh-pages-embed.js"></script><script>makeCodeRender("{{ site.makecode.home_url }}", "{{ site.github.owner_name }}/{{ site.github.repository_name }}");</script>
+* for PXT/microbit
