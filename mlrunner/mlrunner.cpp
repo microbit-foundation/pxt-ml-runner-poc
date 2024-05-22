@@ -1,15 +1,4 @@
-/**
- * @brief Functions to interact with the ML model.
- *
- * @copyright
- * Copyright 2024 Micro:bit Educational Foundation.
- * SPDX-License-Identifier: MIT
- *
- * @details
- * The ML4F model has its own header, but does not include the labels.
- * So an extra header with the labels is added on top.
- * We call the "full model" the labels header + the ML4F model.
- */
+
 #include <stdlib.h>
 #include "model_example.h"
 #include "ml4f.h"
@@ -20,7 +9,7 @@ using namespace mlrunner;
 // Linker symbols used to find the start of the model in flash.
 extern uint8_t  __etext, __data_start__, __data_end__;
 
-#if MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
+#if DEVICE_MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
 // Flag to control usage of model included in model_example.h/c
 static bool USE_BUILT_IN = true;
 #endif
@@ -37,7 +26,7 @@ static bool USE_BUILT_IN = true;
  * @return The start address to where the full model is stored in flash.
  */
 static uint32_t get_full_model_start_address() {
-#if MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
+#if DEVICE_MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
     if (USE_BUILT_IN) {
         return (uint32_t)model_example;
     }
@@ -97,11 +86,11 @@ static ml4f_header_t* get_ml4f_model() {
 /*****************************************************************************/
 /* Public API                                                                */
 /*****************************************************************************/
-#if MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
 void mlrunner::ml_useBuiltInModel(bool use) {
+#if DEVICE_MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
     USE_BUILT_IN = use;
-}
 #endif
+}
 
 bool mlrunner::ml_isModelPresent() {
     ml_model_header_t *model_header = get_model_header();

@@ -1,13 +1,13 @@
+/**
+ * @brief An ML4F model example that can be used to test the MLRunner lib.
+ *
+ * @copyright
+ * Copyright 2024 Micro:bit Educational Foundation.
+ * SPDX-License-Identifier: MIT
+ */
 #pragma once
 
-#if MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
-
-#define ml4f_model_example_header_len   52
-#define ml4f_model_example_size         13852
-#define ml4f_full_model_size            (ml4f_model_example_header_len + ml4f_model_example_size)
-
-// This is a struct representation of the header included at the beginning of model_example
-/*
+/* This is a struct representation of the header included at the beginning of model_example
 #include <mlrunner.h>
 const ml_model_header_t ml4f_model_example_header = {
     .magic0 = MODEL_HEADER_MAGIC0,
@@ -24,6 +24,12 @@ const ml_model_header_t ml4f_model_example_header = {
     }
 };
 */
+
+#if DEVICE_MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
+
+#define ml4f_model_example_header_len   52
+#define ml4f_model_example_size         13852
+#define ml4f_full_model_size            (ml4f_model_example_header_len + ml4f_model_example_size)
 
 const unsigned int model_example[ml4f_full_model_size] = {
     // Manually converted ml4f_model_example_header
@@ -1765,4 +1771,5 @@ const unsigned int model_example[ml4f_full_model_size] = {
     0x3e637806, 0xbd98ec6e, 0x3c4d37cc, 0xbdf9df27, 0x3e9989b7, 0x3f06e7c8, 0xbe9453e9, 0x3eb7a815, 
     0xba16641b, 0x00000000, 0x00000000, 0x00000000, 
 };
-#endif
+
+#endif // DEVICE_MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1

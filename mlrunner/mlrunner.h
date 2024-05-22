@@ -1,3 +1,15 @@
+/**
+ * @brief Functions to interact with the ML4F model.
+ *
+ * @copyright
+ * Copyright 2024 Micro:bit Educational Foundation.
+ * SPDX-License-Identifier: MIT
+ *
+ * @details
+ * The ML4F model has its own header, but does not include the labels.
+ * So an extra header with the labels is added on top.
+ * We call the "full model" the labels header + the ML4F model.
+ */
 #pragma once
 
 #include <stdbool.h>
