@@ -38,6 +38,9 @@ To edit this repository in MakeCode.
 
 ## Building locally
 
+Ensure you have the required toolchain to build for V1 and V2
+(arm-none-eabi-gcc, python, yotta, cmake, ninja, srec_cat) or docker.
+
 ```bash
 git clone https://github.com/microbit-foundation/pxt-ml-runner-poc
 cd pxt-ml-runner-poc
@@ -47,13 +50,21 @@ cp node_modules/pxtcli.json ./pxtcli.json
 npm install pxt-microbit@6.1.10 --no-save
 mv ./pxtcli.json node_modules/pxtcli.json
 npx pxt install
-PXT_FORCE_LOCAL=1 PXT_NODOCKER=1 PXT_COMPILE_SWITCHES=csv---mbcodal npx pxt
+PXT_FORCE_LOCAL=1 PXT_NODOCKER=1 npx pxt
 ```
 
 > ![WARNING]
 > Forcing microbit target at version 6.1.10 due to this issue:
 > https://github.com/microsoft/pxt-microbit/pull/5481
 
+For the V1 build Yotta can hit the GitHub rate limits quite easily if the
+project is built from a clean state more than once.
+A V2-only build can be performed with the `PXT_COMPILE_SWITCHES=csv---mbcodal`
+environmental variable.
+
+```
+PXT_FORCE_LOCAL=1 PXT_NODOCKER=1 PXT_COMPILE_SWITCHES=csv---mbcodal npx pxt
+```
 
 #### Metadata (used for search)
 

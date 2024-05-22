@@ -12,11 +12,11 @@
         "pxttest.ts",
         "pxtextension.ts",
         "pxtextension.cpp",
+        "mlrunner/ml4f.h",
+        "mlrunner/ml4f.c",
         "mlrunner/mlrunner.h",
         "mlrunner/mlrunner.cpp",
-        "mlrunner/model_example.h",
-        "ml4f/ml4f.h",
-        "ml4f/ml4f.c"
+        "mlrunner/model_example.h"
     ],
     "targetVersions": {
         "targetId": "microbit",

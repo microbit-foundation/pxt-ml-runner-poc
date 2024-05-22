@@ -12,7 +12,7 @@
  */
 #include <stdlib.h>
 #include "model_example.h"
-#include "../ml4f/ml4f.h"
+#include "ml4f.h"
 #include "mlrunner.h"
 
 using namespace mlrunner;
