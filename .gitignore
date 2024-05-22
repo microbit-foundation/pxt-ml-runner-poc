@@ -11,6 +11,9 @@ _site
 .header.json
 .simstate.json
 
+# VSCode
+.vscode/settings.json
+
 # OS
 .DS_Store
 [Dd]esktop.ini

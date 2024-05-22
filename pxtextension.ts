@@ -19,6 +19,6 @@ namespace mlrunner {
     //% shim=mlrunner::emit_ml_event
     export function emitMlEvent(): void {
         // Different value used in simulator vs hardware to check it works
-        control.raiseEvent(71,1)
+        control.raiseEvent(71, MlRunnerEvent.MlRunnerEventLabel1)
     }
 }

@@ -9,10 +9,10 @@ in other MakeCode extensions and a MicroPython module.
 - Almost nothing implemented yet
 - Currently it embeds a model in a C file as an array with blob data
 - Due to the model size, BLE had to be disabled
-    - This currently doesn't work on live MAkeCode, only beta
+    - This currently doesn't work on live MakeCode, only beta
         - Actually it doesn't look like it works in beta either, just locally
     - Adding other BLE extensions might fail
-- The [GH issue tracker](https://github.com/microbit-foundation/pxt-ml-runner-poc/issues/)
+- This repository [issue tracker](https://github.com/microbit-foundation/pxt-ml-runner-poc/issues/)
   contains issues that could be encountered and workarounds 
 - Only built and tested on micro:bit V2
 
@@ -20,7 +20,7 @@ in other MakeCode extensions and a MicroPython module.
 
 This repository can be added as an **extension** in MakeCode.
 
-* open [MakeCode](https://makecode.microbit.org)
+* open [MakeCode beta](https://makecode.microbit.org/beta)
 * click on **New Project**
 * click on **Extensions** under the gearwheel menu
 * search for **https://github.com/microbit-foundation/pxt-ml-runner-poc** and import

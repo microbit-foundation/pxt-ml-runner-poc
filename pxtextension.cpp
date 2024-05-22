@@ -13,10 +13,22 @@
     }
 #endif
 
+enum MlRunnerEvent {
+    //% block="label 1"
+    MlRunnerEventLabel1 = 1,
+    //% block="label 2"
+    MlRunnerEventLabel2 = 2,
+    //% block="label 3"
+    MlRunnerEventLabel3 = 3,
+    //% block="label 4"
+    MlRunnerEventLabel4 = 4,
+};
+
 namespace mlrunner {
+
     //% blockId=mlrunner_emit_ml_event
     void emit_ml_event() {
         // Different value used between simulator and hardware to check it works
-        MicroBitEvent evt(71, 2);
+        MicroBitEvent evt(71, MlRunnerEvent::MlRunnerEventLabel2);
     }
 }

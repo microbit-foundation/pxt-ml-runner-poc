@@ -8,10 +8,10 @@ input.onButtonPressed(Button.A, function () {
 input.onButtonPressed(Button.B, function () {
     basic.clearScreen()
 })
-mlrunner.onMlEvent(1, function () {
+mlrunner.onMlEvent(MlRunnerEvent.MlRunnerEventLabel1, function () {
     basic.showIcon(IconNames.Heart)
 })
-mlrunner.onMlEvent(2, function () {
+mlrunner.onMlEvent(MlRunnerEvent.MlRunnerEventLabel2, function () {
     basic.showIcon(IconNames.SmallHeart)
 })
 
