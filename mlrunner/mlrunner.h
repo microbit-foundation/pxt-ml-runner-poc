@@ -17,7 +17,6 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-namespace mlrunner {
 extern "C" {
 #endif
 
@@ -67,8 +66,7 @@ bool ml_isModelPresent();
  *
  * @return The number of input elements required for the model.
  */
-//% blockId=mlrunner_input_length
-int ml_getInputLen();
+int ml_getInputLength();
 
 /**
  * @brief Get the model labels.
@@ -89,5 +87,4 @@ ml_prediction_t* ml_predict(const float *input);
 
 #ifdef __cplusplus
 }  // extern "C"
-}  // namespace mlrunner
 #endif

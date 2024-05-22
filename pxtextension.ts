@@ -3,7 +3,7 @@
 namespace mlrunner {
     //% blockId=mlrunner_input_length
     //% block="model input length"
-    //% shim=mlrunner::ml_getInputLen
+    //% shim=mlrunner::inputLength
     export function inputLength(): number {
         return 0;
     }
@@ -11,14 +11,18 @@ namespace mlrunner {
     //% blockId=mlrunner_on_ml_event
     //% block="on ML event"
     export function onMlEvent(value: number, body: () => void): void {
-        control.onEvent(71, value, body)
+        control.onEvent(MlRunnerIds.MlRunnerInference, value, body)
     }
 
-    //% blockId=mlrunner_emit_ml_event
-    //% block="emit ML event"
-    //% shim=mlrunner::emit_ml_event
-    export function emitMlEvent(): void {
-        // Different value used in simulator vs hardware to check it works
-        control.raiseEvent(71, MlRunnerEvent.MlRunnerEventLabel1)
+    //% blockId=mlrunner_run_ml_model_in_background
+    //% block="run ML model in background"
+    //% shim=mlrunner::init
+    export function runMlModelInBackground(): void {
+    }
+
+    //% blockId=mlrunner_stop_ml_model_in_background
+    //% block="stop ML model in background"
+    //% shim=mlrunner::deInit
+    export function stopMlModelInBackground(): void {
     }
 }

@@ -4,8 +4,6 @@
 #include "ml4f.h"
 #include "mlrunner.h"
 
-using namespace mlrunner;
-
 // Linker symbols used to find the start of the model in flash.
 extern uint8_t  __etext, __data_start__, __data_end__;
 
@@ -86,18 +84,18 @@ static ml4f_header_t* get_ml4f_model() {
 /*****************************************************************************/
 /* Public API                                                                */
 /*****************************************************************************/
-void mlrunner::ml_useBuiltInModel(bool use) {
+void ml_useBuiltInModel(bool use) {
 #if DEVICE_MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
     USE_BUILT_IN = use;
 #endif
 }
 
-bool mlrunner::ml_isModelPresent() {
+bool ml_isModelPresent() {
     ml_model_header_t *model_header = get_model_header();
     return model_header != NULL;
 }
 
-int mlrunner::ml_getInputLen() {
+int ml_getInputLength() {
     ml4f_header_t *ml4f_model = get_ml4f_model();
     if (ml4f_model == NULL) {
         return 0;
@@ -105,7 +103,7 @@ int mlrunner::ml_getInputLen() {
     return ml4f_shape_elements(ml4f_input_shape(ml4f_model));
 }
 
-ml_labels_t* mlrunner::ml_getLabels() {
+ml_labels_t* ml_getLabels() {
     static ml_labels_t labels = {
         .num_labels = 0,
         .labels = NULL
@@ -181,7 +179,7 @@ ml_labels_t* mlrunner::ml_getLabels() {
     return &labels;
 }
 
-ml_prediction_t* mlrunner::ml_predict(const float *input) {
+ml_prediction_t* ml_predict(const float *input) {
     static ml_prediction_t predictions = {
         .max_index = 0,
         .num_labels = 0,

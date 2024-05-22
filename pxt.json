@@ -16,7 +16,7 @@
         "mlrunner/ml4f.h",
         "mlrunner/ml4f.c",
         "mlrunner/mlrunner.h",
-        "mlrunner/mlrunner.cpp",
+        "mlrunner/mlrunner.c",
         "mlrunner/model_example.h"
     ],
     "targetVersions": {

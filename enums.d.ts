@@ -1,6 +1,4 @@
 // Auto-generated. Do not edit.
-declare namespace mlrunner {
-}
 
 
     declare const enum MlRunnerEvent {
@@ -12,6 +10,20 @@ declare namespace mlrunner {
     MlRunnerEventLabel3 = 3,
     //% block="label 4"
     MlRunnerEventLabel4 = 4,
+    }
+
+
+    declare const enum MlRunnerIds {
+    MlRunnerInference = 71,
+    MlRunnerTimer = 72,
+    }
+
+
+    declare const enum MlRunnerError {
+    ErrorModelNotPresent = 800,
+    ErrorInputLength = 801,
+    ErrorMemAlloc = 802,
+    ErrorModelInference = 803,
     }
 
 // Auto-generated. Do not edit. Really.
