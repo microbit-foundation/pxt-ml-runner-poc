@@ -9,8 +9,8 @@ namespace mlrunner {
     }
 
     //% blockId=mlrunner_on_ml_event
-    //% block="on ML event"
-    export function onMlEvent(value: number, body: () => void): void {
+    //% block="on ML event %value"
+    export function onMlEvent(value: MlRunnerEvent, body: () => void): void {
         control.onEvent(MlRunnerIds.MlRunnerInference, value, body)
     }
 
