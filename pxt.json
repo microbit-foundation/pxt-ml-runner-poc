@@ -36,8 +36,8 @@
     "yotta": {
         "config": {
             "codal": {
-                "BLE": 0,
-                "MLRUNNER_INCLUDE_MODEL_EXAMPLE": 1
+                "BLE": 1,
+                "MLRUNNER_INCLUDE_MODEL_EXAMPLE": 0
             }
         }
     }
