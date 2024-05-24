@@ -1,0 +1,62 @@
+{
+    "configurations": [
+        {
+            "name": "micro:bit PyOCD Cortex Debug",
+            "cwd": "${workspaceFolder}",
+            "executable": "built/codal/build/MICROBIT",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "pyocd",
+            "interface": "swd",
+            "device": "nrf52",
+            "targetId": "nrf52",
+            "svdFile": "built/codal/libraries/codal-nrf52/nrfx/mdk/nrf52833.svd",
+            "preLaunchCommands": [
+              "load built/codal/build/MICROBIT",
+              "enable breakpoint",
+              "monitor reset"
+            ]
+        },
+  
+        {
+            "name": "micro:bit OpenOCD Cortex Debug",
+            "cwd": "${workspaceFolder}",
+            "executable": "built/codal/build/MICROBIT",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "configFiles": [
+              "interface/cmsis-dap.cfg",
+              "target/nrf52.cfg"
+            ],
+            "interface": "swd",
+            "svdFile": "built/codal/libraries/codal-nrf52/nrfx/mdk/nrf52833.svd",
+            "preLaunchCommands": [
+              "load built/codal/build/MICROBIT",
+              "enable breakpoint",
+              "monitor reset"
+            ],
+            "openOCDLaunchCommands": [
+              "adapter speed 8000"
+            ]
+        },
+        {
+            "name": "(attach) micro:bit OpenOCD Cortex Debug",
+            "cwd": "${workspaceFolder}",
+            "executable": "built/codal/build/MICROBIT",
+            "request": "attach",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "configFiles": [
+              "interface/cmsis-dap.cfg",
+              "target/nrf52.cfg"
+            ],
+            "interface": "swd",
+            "svdFile": "built/codal/libraries/codal-nrf52/nrfx/mdk/nrf52833.svd",
+            "preAttachCommands": [],
+            "openOCDLaunchCommands": [
+              "adapter speed 8000"
+            ]
+        }
+    ]
+  }
