@@ -2,7 +2,7 @@
 declare namespace mlrunner {
 
     /*************************************************************************/
-    //% shim=mlrunner::init
+    //% blockId=mlrunner_init shim=mlrunner::init
     function init(model_str: Buffer): void;
 }
 

@@ -1,6 +1,13 @@
 input.onButtonPressed(Button.A, function () {
     basic.clearScreen()
 })
+input.onButtonPressed(Button.B, function () {
+    if (mlrunner.isRunning()) {
+        mlrunner.stopRunning()
+    } else {
+        mlrunner.startRunning()
+    }
+})
 mlrunner.onMlEvent(MlRunnerLabels.Jumping, function () {
     basic.showString("J")
 })
@@ -13,7 +20,6 @@ mlrunner.onMlEvent(MlRunnerLabels.Standing, function () {
 mlrunner.onMlEvent(MlRunnerLabels.Walking, function () {
     basic.showString("W")
 })
-mlrunner.runMlModelInBackground()
 basic.showNumber(mlrunner.inputLength())
 basic.forever(function () {
 	

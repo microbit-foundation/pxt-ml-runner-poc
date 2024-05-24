@@ -40,7 +40,7 @@
         "config": {
             "codal": {
                 "BLE": 1,
-                "MLRUNNER_USE_EXAMPLE_MODEL": 0
+                "MLRUNNER_USE_EXAMPLE_MODEL": 1
             }
         }
     }

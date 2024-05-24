@@ -99,7 +99,7 @@ ml_labels_t* ml_getLabels() {
         .labels = NULL
     };
 
-    const ml_model_header_t* const model_header = MODEL_ADDRESS;
+    const ml_model_header_t* const model_header = (ml_model_header_t*)MODEL_ADDRESS;
     if (model_header == NULL) {
         labels.num_labels = 0;
         if (labels.labels != NULL) {

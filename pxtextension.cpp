@@ -77,7 +77,7 @@ namespace mlrunner {
     /*************************************************************************/
     /* Exported functions                                                    */
     /*************************************************************************/
-    //%
+    //% blockId=mlrunner_init
     void init(Buffer model_str) {
 #if MICROBIT_CODAL != 1
         target_panic(PANIC_VARIANT_NOT_SUPPORTED);
@@ -95,11 +95,12 @@ namespace mlrunner {
         void *model_address = (void *)model_str->data;
 #endif
 
-        if (!ml_setModel(model_address)) {
+        const bool setModelSuccess = ml_setModel(model_address);
+        if (!setModelSuccess) {
             uBit.panic(MlRunnerError::ErrorModelNotPresent);
         }
 
-        int inputLen = ml_getInputLength();
+        const int inputLen = ml_getInputLength();
         if (inputLen <= 0) {
             uBit.panic(MlRunnerError::ErrorModelNotPresent);
         }
@@ -124,12 +125,16 @@ namespace mlrunner {
         DEBUG_PRINT("Model loaded\n");
     }
 
-    //% blockId=mlrunner_stop_model_background
+    //% blockId=mlrunner_stop_model_running
     void deInit() {
 #if MICROBIT_CODAL != 1
         target_panic(PANIC_VARIANT_NOT_SUPPORTED);
 #endif
-        if (!initialised) return;
+        if (!initialised) {
+            DEBUG_PRINT("Attempting to stop running ML, but was already stopped.\n");
+            return;
+        }
+        DEBUG_PRINT("Stop running the ML model... ");
 
         // Stop timer event
         uBit.messageBus.ignore(MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE, &recordAccData);
@@ -143,6 +148,7 @@ namespace mlrunner {
         accDataSize = 0;
         accDataIndex = 0;
         initialised = false;
+        DEBUG_PRINT("Done\n");
     }
 
     //% blockId=mlrunner_input_length
@@ -152,5 +158,10 @@ namespace mlrunner {
 #else
         return DEVICE_NOT_SUPPORTED;
 #endif
+    }
+
+    //% blockId=mlrunner_is_running
+    bool isModelRunning() {
+        return initialised;
     }
 }
