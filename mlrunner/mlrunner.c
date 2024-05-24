@@ -1,16 +1,13 @@
 
 #include <stdlib.h>
-#include "model_example.h"
 #include "ml4f.h"
 #include "mlrunner.h"
 
 // Linker symbols used to find the start of the model in flash.
 extern uint8_t  __etext, __data_start__, __data_end__;
 
-#if DEVICE_MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
-// Flag to control usage of model included in model_example.h/c
-static bool USE_BUILT_IN = true;
-#endif
+// Pointer to the model in flash
+static uint32_t* MODEL_ADDRESS = NULL;
 
 /*****************************************************************************/
 /* Private API                                                               */
@@ -24,12 +21,6 @@ static bool USE_BUILT_IN = true;
  * @return The start address to where the full model is stored in flash.
  */
 static uint32_t get_full_model_start_address() {
-#if DEVICE_MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
-    if (USE_BUILT_IN) {
-        return (uint32_t)model_example;
-    }
-#endif
-
     // The last section in FLASH is meant to be text, but data section contents
     // are placed immediately after it (to be copied to RAM), but there isn't
     // a symbol to indicate its end in FLASH, so we calculate how long data is
@@ -46,25 +37,23 @@ static uint32_t get_full_model_start_address() {
 }
 
 /**
- * @brief Get a pointer to the full model header.
- *
- * @return The model header or NULL if the model is not present or invalid.
+ * @return True if the model header is valid, False otherwise.
  */
-static ml_model_header_t* get_model_header() {
-    ml_model_header_t *model_header = (ml_model_header_t *)get_full_model_start_address();
+static bool is_model_valid(void* model_address) {
+    ml_model_header_t *model_header = (ml_model_header_t *)model_address;
     if (model_header->magic0 != MODEL_HEADER_MAGIC0) {
-        return NULL;
+        return false;
     }
     // We should have at least one label
     if (model_header->number_of_labels == 0) {
-        return NULL;
+        return false;
     }
     // Also check the ML4F header magic values to ensure it's there too
     ml4f_header_t *ml4f_model = (ml4f_header_t *)((uint32_t)model_header + model_header->model_offset);
     if (ml4f_model->magic0 != ML4F_MAGIC0 || ml4f_model->magic1 != ML4F_MAGIC1) {
-        return NULL;
+        return false;
     }
-    return model_header;
+    return true;
 }
 
 /**
@@ -73,26 +62,27 @@ static ml_model_header_t* get_model_header() {
  * @return The ML4F model or NULL if the model is not present or invalid.
  */
 static ml4f_header_t* get_ml4f_model() {
-    // get_model_header() already checks the ML4F header magic values
-    ml_model_header_t *model_header = get_model_header();
-    if (model_header == NULL) {
+    if (MODEL_ADDRESS == NULL || !is_model_valid(MODEL_ADDRESS)) {
         return NULL;
     }
+    ml_model_header_t *model_header = (ml_model_header_t *)MODEL_ADDRESS;
     return (ml4f_header_t *)((uint32_t)model_header + model_header->model_offset);
 }
 
 /*****************************************************************************/
 /* Public API                                                                */
 /*****************************************************************************/
-void ml_useBuiltInModel(bool use) {
-#if DEVICE_MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
-    USE_BUILT_IN = use;
-#endif
+bool ml_setModel(void *model_address) {
+    // Check if the model is valid
+    if (!is_model_valid(model_address)) {
+        return false;
+    }
+    MODEL_ADDRESS = (uint32_t *)model_address;
+    return true;
 }
 
 bool ml_isModelPresent() {
-    ml_model_header_t *model_header = get_model_header();
-    return model_header != NULL;
+    return MODEL_ADDRESS != NULL;
 }
 
 int ml_getInputLength() {
@@ -109,7 +99,7 @@ ml_labels_t* ml_getLabels() {
         .labels = NULL
     };
 
-    const ml_model_header_t* const model_header = get_model_header();
+    const ml_model_header_t* const model_header = MODEL_ADDRESS;
     if (model_header == NULL) {
         labels.num_labels = 0;
         if (labels.labels != NULL) {

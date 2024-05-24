@@ -1,16 +1,8 @@
 #include <pxt.h>
 #include "mlrunner.h"
-
-enum MlRunnerEvent {
-    //% block="label 1"
-    MlRunnerEventLabel1 = 1,
-    //% block="label 2"
-    MlRunnerEventLabel2 = 2,
-    //% block="label 3"
-    MlRunnerEventLabel3 = 3,
-    //% block="label 4"
-    MlRunnerEventLabel4 = 4,
-};
+#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 1
+#include "model_example.h"
+#endif
 
 enum MlRunnerIds {
     MlRunnerInference = 71,
@@ -34,6 +26,15 @@ static bool initialised = false;
 static const CODAL_TIMESTAMP ML_CODAL_TIMER_PERIOD = 20;
 static const uint16_t ML_CODAL_TIMER_VALUE = 1;
 
+
+// Enable/disable debug print to serial
+#define ENABLE_DEBUG_PRINT 1
+#if ENABLE_DEBUG_PRINT
+#define DEBUG_PRINT(...) uBit.serial.printf(__VA_ARGS__)
+#else
+#define DEBUG_PRINT(...)
+#endif
+
 namespace mlrunner {
 
     void runModel() {
@@ -44,15 +45,15 @@ namespace mlrunner {
             uBit.panic(MlRunnerError::ErrorModelInference);
         }
 
-        uBit.serial.printf("Max prediction: %d %s\nPredictions: ",
-                           predictions->max_index,
-                           predictions->labels[predictions->max_index]);
+        DEBUG_PRINT("Max prediction: %d %s\nPredictions: ",
+                    predictions->max_index,
+                    predictions->labels[predictions->max_index]);
         for (size_t i = 0; i < predictions->num_labels; i++) {
-            uBit.serial.printf(" %s[%d]",
-                               predictions->labels[i],
-                               (int)(predictions->predictions[i] * 100));
+            DEBUG_PRINT(" %s[%d]",
+                        predictions->labels[i],
+                        (int)(predictions->predictions[i] * 100));
         }
-        uBit.serial.send("\n\n");
+        DEBUG_PRINT("\n\n");
 
         MicroBitEvent evt(MlRunnerIds::MlRunnerInference, predictions->max_index + 1);
     }
@@ -73,12 +74,30 @@ namespace mlrunner {
         }
     }
 
-    //% blockId=mlrunner_run_ml_model_in_background
-    void init() {
+    /*************************************************************************/
+    /* Exported functions                                                    */
+    /*************************************************************************/
+    //%
+    void init(Buffer model_str) {
 #if MICROBIT_CODAL != 1
         target_panic(PANIC_VARIANT_NOT_SUPPORTED);
 #endif
         if (initialised) return;
+
+#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 1
+        DEBUG_PRINT("Using example model... ");
+        void *model_address = (void *)example_model;
+#else
+        DEBUG_PRINT("Using embedded model... ");
+        if (model_str == NULL || model_str->length <= 0 || model_str->data == NULL) {
+            uBit.panic(MlRunnerError::ErrorModelNotPresent);
+        }
+        void *model_address = (void *)model_str->data;
+#endif
+
+        if (!ml_setModel(model_address)) {
+            uBit.panic(MlRunnerError::ErrorModelNotPresent);
+        }
 
         int inputLen = ml_getInputLength();
         if (inputLen <= 0) {
@@ -101,9 +120,11 @@ namespace mlrunner {
         uBit.timer.eventEvery(ML_CODAL_TIMER_PERIOD, MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE);
 
         initialised = true;
+
+        DEBUG_PRINT("Model loaded\n");
     }
 
-    //% blockId=mlrunner_stop_ml_model_in_background
+    //% blockId=mlrunner_stop_model_background
     void deInit() {
 #if MICROBIT_CODAL != 1
         target_panic(PANIC_VARIANT_NOT_SUPPORTED);

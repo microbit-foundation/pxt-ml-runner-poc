@@ -25,13 +25,13 @@ const ml_model_header_t ml4f_model_example_header = {
 };
 */
 
-#if DEVICE_MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
+#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 1
 
 #define ml4f_model_example_header_len   52
 #define ml4f_model_example_size         13852
 #define ml4f_full_model_size            (ml4f_model_example_header_len + ml4f_model_example_size)
 
-const unsigned int model_example[ml4f_full_model_size] = {
+const unsigned int example_model[ml4f_full_model_size] = {
     // Manually converted ml4f_model_example_header
     0x4D4F444C, 0x00340031, 0x00000000, 0x04000000,
     0x706D754A, 0x00676E69, 0x6E6E7552, 0x00676E69,
@@ -1772,4 +1772,4 @@ const unsigned int model_example[ml4f_full_model_size] = {
     0xba16641b, 0x00000000, 0x00000000, 0x00000000, 
 };
 
-#endif // DEVICE_MLRUNNER_INCLUDE_MODEL_EXAMPLE == 1
+#endif // DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 1

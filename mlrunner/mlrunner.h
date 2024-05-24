@@ -45,14 +45,12 @@ typedef struct ml_prediction_s {
 } ml_prediction_t;
 
 /**
- * @brief Select the Built-in model or the model added to a flash region.
- * 
- * Built-in model is compiled with MicroPython as an array of bytes.
- * The model added to a flash region is added by the coding editors.
+ * @brief Set the model to use for inference.
  *
- * @param use True to use the built-in model, False to use the flash section.
+ * @param model_address The start address of the model.
+ * @return True if the model is valid and set, False otherwise.
  */
-void ml_useBuiltInModel(bool use);
+bool ml_setModel(void *model_address);
 
 /**
  * @brief Check if a model is present.

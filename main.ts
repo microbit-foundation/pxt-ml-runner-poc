@@ -1,20 +1,20 @@
-mlrunner.onMlEvent(MlRunnerEvent.MlRunnerEventLabel4, function () {
-    basic.showString("4")
-})
 input.onButtonPressed(Button.A, function () {
     basic.clearScreen()
 })
-mlrunner.onMlEvent(MlRunnerEvent.MlRunnerEventLabel1, function () {
-    basic.showString("1")
+mlrunner.onMlEvent(MlRunnerLabels.Jumping, function () {
+    basic.showString("J")
 })
-mlrunner.onMlEvent(MlRunnerEvent.MlRunnerEventLabel3, function () {
-    basic.showString("3")
+mlrunner.onMlEvent(MlRunnerLabels.Running, function () {
+    basic.showString("R")
 })
-mlrunner.onMlEvent(MlRunnerEvent.MlRunnerEventLabel2, function () {
-    basic.showString("2")
+mlrunner.onMlEvent(MlRunnerLabels.Standing, function () {
+    basic.showString("S")
 })
-basic.showNumber(mlrunner.inputLength())
+mlrunner.onMlEvent(MlRunnerLabels.Walking, function () {
+    basic.showString("W")
+})
 mlrunner.runMlModelInBackground()
+basic.showNumber(mlrunner.inputLength())
 basic.forever(function () {
 	
 })
