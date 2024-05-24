@@ -151,15 +151,6 @@ namespace mlrunner {
         DEBUG_PRINT("Done\n");
     }
 
-    //% blockId=mlrunner_input_length
-    int inputLength() {
-#if MICROBIT_CODAL
-        return ml_getInputLength();
-#else
-        return DEVICE_NOT_SUPPORTED;
-#endif
-    }
-
     //% blockId=mlrunner_is_running
     bool isModelRunning() {
         return initialised;

@@ -20,7 +20,6 @@ mlrunner.onMlEvent(MlRunnerLabels.Standing, function () {
 mlrunner.onMlEvent(MlRunnerLabels.Walking, function () {
     basic.showString("W")
 })
-basic.showNumber(mlrunner.inputLength())
 basic.forever(function () {
 	
 })

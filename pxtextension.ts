@@ -1,12 +1,5 @@
 //% color=#2b64c3 weight=100 icon="\uf108" block="ML Runner" advanced=false
 namespace mlrunner {
-    //% blockId=mlrunner_input_length
-    //% block="model input length"
-    //% shim=mlrunner::inputLength
-    export function inputLength(): number {
-        return 0;
-    }
-
     /**
      * Run this code when the model detects the input label has been predicted.
      *

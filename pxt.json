@@ -3,8 +3,7 @@
     "version": "0.1.5",
     "description": "Experimental extension to run ML4F models in micro:bit MakeCode",
     "dependencies": {
-        "core": "*",
-        "radio": "*"
+        "core": "*"
     },
     "files": [
         "README.md",
@@ -40,7 +39,7 @@
         "config": {
             "codal": {
                 "BLE": 1,
-                "MLRUNNER_USE_EXAMPLE_MODEL": 1
+                "MLRUNNER_USE_EXAMPLE_MODEL": 0
             }
         }
     }
