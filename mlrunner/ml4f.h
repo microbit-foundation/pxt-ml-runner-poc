@@ -19,7 +19,7 @@ extern "C" {
 #define ML4F_TYPE_FLOAT32 1
 
 #define ML4F_MAGIC0 0x30470f62
-#define ML4F_MAGIC1 0x46344c4d // "ML4F"
+#define ML4F_MAGIC1 0x46344c4d /* "ML4F" */
 
 // All values are little endian.
 // All offsets and sizes are in bytes.
