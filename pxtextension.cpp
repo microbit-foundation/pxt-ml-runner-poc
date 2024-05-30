@@ -20,10 +20,11 @@ static bool initialised = false;
 static const CODAL_TIMESTAMP ML_CODAL_TIMER_PERIOD = 25;
 static const uint16_t ML_CODAL_TIMER_VALUE = 1;
 
-
-// Enable/disable debug print to serial
-#define ENABLE_DEBUG_PRINT 1
-#if ENABLE_DEBUG_PRINT
+// Enable/disable debug print to serial, can be set in pxt.json
+#ifndef ML_DEBUG_PRINT
+#define ML_DEBUG_PRINT 0
+#endif
+#if ML_DEBUG_PRINT
 #define DEBUG_PRINT(...) uBit.serial.printf(__VA_ARGS__)
 #else
 #define DEBUG_PRINT(...)
@@ -80,7 +81,7 @@ namespace mlrunner {
         DEBUG_PRINT("Using example model... ");
         void *model_address = (void *)example_model;
 #else
-        DEBUG_PRINT("Using embedded model... ");
+        DEBUG_PRINT("Using embedded model...\n");
         if (model_str == NULL || model_str->length <= 0 || model_str->data == NULL) {
             DEBUG_PRINT("Model string not present\n");
             uBit.panic(MlRunnerError::ErrorModelNotPresent);
@@ -103,6 +104,7 @@ namespace mlrunner {
             DEBUG_PRINT("Model input length not divisible by 3\n");
             uBit.panic(MlRunnerError::ErrorInputLength);
         }
+        DEBUG_PRINT("\tModel input length: %d\n", inputLen);
 
         bool success = mlDataProcessor.init(inputLen / 3);
         if (!success) {
@@ -115,7 +117,7 @@ namespace mlrunner {
 
         initialised = true;
 
-        DEBUG_PRINT("Model loaded\n");
+        DEBUG_PRINT("\tModel loaded\n");
     }
 
     //% blockId=mlrunner_stop_model_running
@@ -137,7 +139,7 @@ namespace mlrunner {
         mlDataProcessor.deinit();
         initialised = false;
 
-        DEBUG_PRINT("Done\n");
+        DEBUG_PRINT("Done\n\n");
     }
 
     //% blockId=mlrunner_is_running

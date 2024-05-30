@@ -42,7 +42,6 @@
     "yotta": {
         "config": {
             "codal": {
-                "BLE": 1,
                 "MLRUNNER_USE_EXAMPLE_MODEL": 0,
                 "STACK_SIZE": 8192
             }

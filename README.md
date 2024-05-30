@@ -66,6 +66,22 @@ environmental variable.
 PXT_FORCE_LOCAL=1 PXT_NODOCKER=1 PXT_COMPILE_SWITCHES=csv---mbcodal npx pxt
 ```
 
+## Build flags
+
+To enable debug print from this extension, add the following into your
+pxt.json file:
+
+```json
+{
+    "yotta": {
+        "config": {
+            "ML_DEBUG_PRINT": 1
+        }
+    }
+}
+```
+
+
 #### Metadata (used for search)
 
 * for PXT/microbit
