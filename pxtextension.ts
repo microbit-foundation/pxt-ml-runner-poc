@@ -13,7 +13,7 @@ namespace mlrunner {
     //% blockId=mlrunner_on_ml_event
     //% block="on ML event %value"
     export function onMlEvent(mlEvent: MlRunnerLabels, body: () => void): void {
-        mlrunner.startRunning();
+        startRunning();
         control.onEvent(MlRunnerIds.MlRunnerInference, mlEvent, body)
     }
 
@@ -26,6 +26,7 @@ namespace mlrunner {
     //% blockId=mlrunner_init
     //% shim=mlrunner::init
     function initRunner(modelBlob: Buffer): void {
+        return;
     }
 
     /**
