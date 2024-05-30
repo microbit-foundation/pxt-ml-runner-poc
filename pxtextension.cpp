@@ -1,14 +1,7 @@
 #include <pxt.h>
 #include "mlrunner/mlrunner.h"
-#include "mlrunner/DataProcessor.h"
-#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 1
-    #include "mlrunner/model_example.h"
-    #include "mlrunner/DataProcessorExample.h"
-    #define CustomDataProcessor MlDataProcessorExample
-#else
-    #include "pxtdataprocessor.h"
-    #define CustomDataProcessor PxtDataProcessor
-#endif
+#include "mlrunner/mldataprocessor.h"
+#include "mlrunner/example_model.h"
 
 enum MlRunnerIds {
     MlRunnerInference = 71,
@@ -21,8 +14,6 @@ enum MlRunnerError {
     ErrorMemAlloc = 802,
     ErrorModelInference = 803,
 };
-
-static CustomDataProcessor *dataProcessor = NULL;
 
 static bool initialised = false;
 
@@ -43,7 +34,7 @@ namespace mlrunner {
     void runModel() {
         if (!initialised) return;
 
-        ml_prediction_t* predictions = ml_predict(dataProcessor->getModelInputData());
+        ml_prediction_t* predictions = ml_predict(mlDataProcessor.getModelInputData());
         if (predictions == NULL) {
             uBit.panic(MlRunnerError::ErrorModelInference);
         }
@@ -64,10 +55,10 @@ namespace mlrunner {
     void recordAccData(MicroBitEvent) {
         if (!initialised) return;
 
-        dataProcessor->recordAccData(
+        mlDataProcessor.recordAccData(
             uBit.accelerometer.getX(), uBit.accelerometer.getY(), uBit.accelerometer.getZ());
 
-        if (dataProcessor->isDataReady()) {
+        if (mlDataProcessor.isDataReady()) {
             // Stop firing timer events while running model and resume after
             uBit.messageBus.ignore(MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE, &recordAccData);
             runModel();
@@ -109,8 +100,10 @@ namespace mlrunner {
             uBit.panic(MlRunnerError::ErrorInputLength);
         }
 
-        // TODO: How to check if allocation failed without exceptions?
-        dataProcessor = new CustomDataProcessor(inputLen / 3);
+        bool success = mlDataProcessor.init(inputLen / 3);
+        if (!success) {
+            uBit.panic(MlRunnerError::ErrorMemAlloc);
+        }
 
         // Set up background timer to collect data and run model
         uBit.messageBus.listen(MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE, &recordAccData, MESSAGE_BUS_LISTENER_DROP_IF_BUSY);
@@ -122,7 +115,7 @@ namespace mlrunner {
     }
 
     //% blockId=mlrunner_stop_model_running
-    void deInit() {
+    void deinit() {
 #if MICROBIT_CODAL != 1
         target_panic(PANIC_VARIANT_NOT_SUPPORTED);
 #endif
@@ -137,7 +130,7 @@ namespace mlrunner {
         uBit.timer.cancel(MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE);
 
         // Clean up
-        delete dataProcessor;
+        mlDataProcessor.deinit();
         initialised = false;
 
         DEBUG_PRINT("Done\n");

@@ -45,7 +45,7 @@ namespace mlrunner {
      */
     //% blockId=mlrunner_stop_model_running
     //% block="stop running ML"
-    //% shim=mlrunner::deInit
+    //% shim=mlrunner::deinit
     export function stopRunning(): void {
     }
 

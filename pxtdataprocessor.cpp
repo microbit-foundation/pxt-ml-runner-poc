@@ -1,138 +1,19 @@
+/**
+ * @brief Data Processor for the Model Example included in mlrunner.
+ *
+ * @copyright
+ * Copyright 2024 Micro:bit Educational Foundation.
+ * SPDX-License-Identifier: MIT
+ *
+ * TODO: Need to double buffer this so that a model can be run while the
+ * next data is being collected.
+ */
+#include "mlrunner/mldataprocessor.h"
 
-#include <math.h>
-#include <cstring>
-#include "PxtDataProcessor.h"
+#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL != 1
 
 // To represent the accelerometer data x, y, z
 static const int DATA_AXIS = 3;
-
-/**************************************************************************************************/
-/* Filters                                                                                        */
-/*                                                                                                */
-/* Adapted from:                                                                                  */
-/*   https://github.com/microbit-foundation/ml-trainer/blob/v0.6.0/src/script/datafunctions.ts    */
-/*   (c) 2023, Center for Computational Thinking and Design at Aarhus University and contributors */
-/*   SPDX-License-Identifier: MIT                                                                 */
-/**************************************************************************************************/
-static float filterMax(float *data, int size) {
-    float max = data[0];
-    for (int i = 1; i < size; i++) {
-        if (data[i] > max) {
-            max = data[i];
-        }
-    }
-    return max;
-}
-
-static float filterMin(float *data, int size) {
-    float min = data[0];
-    for (int i = 1; i < size; i++) {
-        if (data[i] < min) {
-            min = data[i];
-        }
-    }
-    return min;
-}
-
-static float filterMean(float *data, int size) {
-    float sum = 0;
-    for (int i = 0; i < size; i++) {
-        sum += data[i];
-    }
-    return sum / size;
-}
-
-// Standard Deviation
-static float filterStdDev(float *data, int size) {
-    float mean = filterMean(data, size);
-    float std = 0;
-    for (int i = 0; i < size; i++) {
-        std += (data[i] - mean) * (data[i] - mean);
-    }
-    std /= size;
-    return sqrt(std);
-}
-
-// Count the number of peaks
-// Warning! This can allocate 5x the size of the data in the stack
-// so ensure DEVICE_STACK_SIZE is appropriately set
-// TODO: Move to the heap, pxt automatically uses its allocator
-static float filterPeaks(float *data, int size) {
-    const int lag = 5;
-    const float threshold = 3.5;
-    const float influence = 0.5;
-    int peaksCounter = 0;
-
-    float signals[size];
-    float filteredY[size];
-    float lead_in[lag];
-    float avgFilter[size];
-    float stdFilter[size];
-    memset(signals, 0, size * sizeof(float));
-    memcpy(filteredY, data, size * sizeof(float));
-    memcpy(lead_in, data, lag * sizeof(float));
-    avgFilter[lag - 1] = filterMean(lead_in, lag);
-    stdFilter[lag - 1] = filterStdDev(lead_in, lag);
-
-    for (int i = lag; i < size; i++) {
-        if (fabs(data[i] - avgFilter[i - 1]) > 0.1 &&
-            fabs(data[i] - avgFilter[i - 1]) > threshold * stdFilter[i - 1]
-        ) {
-            if (data[i] > avgFilter[i - 1]) {
-                signals[i] = +1; // positive signal
-                if (i - 1 > 0 && signals[i - 1] == 0) {
-                    peaksCounter++;
-                }
-            } else {
-                signals[i] = -1; // negative signal
-            }
-            // make influence lower
-            filteredY[i] = influence * data[i] + (1 - influence) * filteredY[i - 1];
-        } else {
-            signals[i] = 0; // no signal
-            filteredY[i] = data[i];
-        }
-
-        // adjust the filters
-        float y_lag[lag];
-        memcpy(y_lag, &filteredY[i - lag], lag * sizeof(float));
-        avgFilter[i] = filterMean(y_lag, lag);
-        stdFilter[i] = filterStdDev(y_lag, lag);
-    }
-    return peaksCounter;
-}
-
-// Total Absolute Acceleration
-static float filterTotalAcc(float *data, int size) {
-    float total = 0;
-    for (int i = 0; i < size; i++) {
-        total += fabs(data[i]);
-    }
-    return total;
-}
-
-// Zero Crossing Rate
-static float filterZcr(float *data, int size) {
-    int count = 0;
-    for (int i = 1; i < size; i++) {
-        if ((data[i] >= 0 && data[i - 1] < 0) ||
-            (data[i] < 0 && data[i - 1] >= 0)) {
-            count++;
-        }
-    }
-    return count / (size - 1);
-
-}
-
-// Root Mean Square
-static float filterRms(float *data, int size) {
-    float rms = 0;
-    for (int i = 0; i < size; i++) {
-        rms += data[i] * data[i];
-    }
-    rms /= size;
-    return sqrt(rms);
-}
 
 // Order is important for the outputData as set in:
 // https://github.com/microbit-foundation/ml-trainer/blob/v0.6.0/src/script/stores/mlStore.ts#L122-L131
@@ -147,27 +28,56 @@ static float (*filters[])(float*, int) = {
     filterRms,
 };
 
-/*****************************************************************************/
-/* PxtDataProcessor                                                          */
-/*****************************************************************************/
-PxtDataProcessor::PxtDataProcessor(int samples) {
-    accDataX = new float[samples];
-    accDataY = new float[samples];
-    accDataZ = new float[samples];
+static float *accDataX;
+static float *accDataY;
+static float *accDataZ;
+static float *outputData;
+static int filterSize;
+static int accSamples;
+static int accDataIndex;
+static bool initialised = false;
+
+bool pxtDataProcessor_init(int samples) {
+    initialised = false;
+    accDataX = (float*)malloc(samples * sizeof(float));
+    if (accDataX == NULL) {
+        return false;
+    }
+    accDataY = (float*)malloc(samples * sizeof(float));
+    if (accDataY == NULL) {
+        free(accDataX);
+        return false;
+    }
+    accDataZ = (float*)malloc(samples * sizeof(float));
+    if (accDataZ == NULL) {
+        free(accDataX);
+        free(accDataY);
+        return false;
+    }
     accSamples = samples;
     accDataIndex = 0;
     filterSize = sizeof(filters) / sizeof(filters[0]);
-    outputData = new float[filterSize * DATA_AXIS];
+    outputData = (float*)malloc(filterSize * DATA_AXIS * sizeof(float));
+    if (outputData == NULL) {
+        free(accDataX);
+        free(accDataY);
+        free(accDataZ);
+        return false;
+    }
+    initialised = true;
+    return true;
 }
 
-PxtDataProcessor::~PxtDataProcessor() {
-    delete[] accDataX;
-    delete[] accDataY;
-    delete[] accDataZ;
-    delete[] outputData;
+void pxtDataProcessor_deinit() {
+    free(accDataX);
+    free(accDataY);
+    free(accDataZ);
+    free(outputData);
 }
 
-void PxtDataProcessor::recordAccData(int x, int y, int z) {
+void pxtDataProcessor_recordAccData(int x, int y, int z) {
+    if (!initialised) return;
+
     accDataX[accDataIndex] = x / 1000.0f;
     accDataY[accDataIndex] = y / 1000.0f;
     accDataZ[accDataIndex] = z / 1000.0f;
@@ -177,11 +87,15 @@ void PxtDataProcessor::recordAccData(int x, int y, int z) {
     }
 }
 
-bool PxtDataProcessor::isDataReady() {
+bool pxtDataProcessor_isDataReady() {
+    if (!initialised) return false;
+
     return accDataIndex == 0;
 }
 
-float* PxtDataProcessor::getModelInputData() {
+float* pxtDataProcessor_getModelInputData() {
+    if (!initialised) return NULL;
+
     // Apply all filter to outputData
     for (int i = 0; i < filterSize; i++) {
         outputData[i*DATA_AXIS + 0] = filters[i](accDataX, accSamples);
@@ -190,3 +104,13 @@ float* PxtDataProcessor::getModelInputData() {
     }
     return outputData;
 }
+
+MlDataProcessor_t mlDataProcessor = {
+    .init = pxtDataProcessor_init,
+    .deinit = pxtDataProcessor_deinit,
+    .recordAccData = pxtDataProcessor_recordAccData,
+    .isDataReady = pxtDataProcessor_isDataReady,
+    .getModelInputData = pxtDataProcessor_getModelInputData
+};
+
+#endif // DEVICE_MLRUNNER_USE_EXAMPLE_MODEL
