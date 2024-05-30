@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 2
+
 /* This is a struct representation of the header included at the beginning of model_example
 #include <mlrunner.h>
 const ml_model_header_t ml4f_model_example_header = {
@@ -24,8 +26,6 @@ const ml_model_header_t ml4f_model_example_header = {
     }
 };
 */
-
-#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 1
 
 #define ml4f_model_example_header_len   52
 #define ml4f_model_example_size         13852
@@ -1772,4 +1772,4 @@ const unsigned int example_model[ml4f_full_model_size] = {
     0xba16641b, 0x00000000, 0x00000000, 0x00000000, 
 };
 
-#endif // DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 1
+#endif // DEVICE_MLRUNNER_USE_EXAMPLE_MODEL

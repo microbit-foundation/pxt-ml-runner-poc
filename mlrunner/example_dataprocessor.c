@@ -12,7 +12,7 @@
  */
 #include "mldataprocessor.h"
 
-#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 1
+#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 2
 
 static float *accData = NULL;
 static int accDataSize = 0;

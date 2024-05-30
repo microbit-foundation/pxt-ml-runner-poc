@@ -8,17 +8,14 @@ input.onButtonPressed(Button.B, function () {
         mlrunner.startRunning()
     }
 })
-mlrunner.onMlEvent(MlRunnerLabels.Jumping, function () {
-    basic.showString("J")
-})
-mlrunner.onMlEvent(MlRunnerLabels.Running, function () {
-    basic.showString("R")
-})
-mlrunner.onMlEvent(MlRunnerLabels.Standing, function () {
+mlrunner.onMlEvent(MlRunnerLabels.Shake, function () {
     basic.showString("S")
 })
-mlrunner.onMlEvent(MlRunnerLabels.Walking, function () {
-    basic.showString("W")
+mlrunner.onMlEvent(MlRunnerLabels.Still, function () {
+    basic.showIcon(IconNames.Asleep)
+})
+mlrunner.onMlEvent(MlRunnerLabels.Circle, function () {
+    basic.showString("C")
 })
 basic.forever(function () {
 	

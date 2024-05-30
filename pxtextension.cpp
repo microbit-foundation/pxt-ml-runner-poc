@@ -1,7 +1,8 @@
 #include <pxt.h>
 #include "mlrunner/mlrunner.h"
 #include "mlrunner/mldataprocessor.h"
-#include "mlrunner/example_model.h"
+#include "mlrunner/example_model1.h"
+#include "mlrunner/example_model2.h"
 
 enum MlRunnerIds {
     MlRunnerInference = 71,
@@ -17,7 +18,7 @@ enum MlRunnerError {
 
 static bool initialised = false;
 
-static const CODAL_TIMESTAMP ML_CODAL_TIMER_PERIOD = 20;
+static const CODAL_TIMESTAMP ML_CODAL_TIMER_PERIOD = 25;
 static const uint16_t ML_CODAL_TIMER_VALUE = 1;
 
 
@@ -76,12 +77,13 @@ namespace mlrunner {
 #endif
         if (initialised) return;
 
-#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 1
+#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL != 0
         DEBUG_PRINT("Using example model... ");
         void *model_address = (void *)example_model;
 #else
         DEBUG_PRINT("Using embedded model... ");
         if (model_str == NULL || model_str->length <= 0 || model_str->data == NULL) {
+            DEBUG_PRINT("Model string not present\n");
             uBit.panic(MlRunnerError::ErrorModelNotPresent);
         }
         void *model_address = (void *)model_str->data;
@@ -89,14 +91,17 @@ namespace mlrunner {
 
         const bool setModelSuccess = ml_setModel(model_address);
         if (!setModelSuccess) {
+            DEBUG_PRINT("Model magic invalid\n");
             uBit.panic(MlRunnerError::ErrorModelNotPresent);
         }
 
         const int inputLen = ml_getInputLength();
         if (inputLen <= 0) {
-            uBit.panic(MlRunnerError::ErrorModelNotPresent);
+            DEBUG_PRINT("Model input length invalid\n");
+            uBit.panic(MlRunnerError::ErrorInputLength);
         }
         if (inputLen % 3 != 0) {
+            DEBUG_PRINT("Model input length not divisible by 3\n");
             uBit.panic(MlRunnerError::ErrorInputLength);
         }
 

@@ -10,7 +10,7 @@
  */
 #include "mlrunner/mldataprocessor.h"
 
-#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL != 1
+#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL != 2
 
 // To represent the accelerometer data x, y, z
 static const int DATA_AXIS = 3;
