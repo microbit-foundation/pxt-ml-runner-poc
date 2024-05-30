@@ -22,7 +22,6 @@
         "mlrunner/mldataprocessor.h",
         "mlrunner/mldataprocessor.c",
         "mlrunner/example_model1.h",
-        "mlrunner/example_model2.h",
         "mlrunner/example_dataprocessor.c"
     ],
     "targetVersions": {

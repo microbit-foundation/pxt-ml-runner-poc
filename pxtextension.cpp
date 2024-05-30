@@ -2,7 +2,6 @@
 #include "mlrunner/mlrunner.h"
 #include "mlrunner/mldataprocessor.h"
 #include "mlrunner/example_model1.h"
-#include "mlrunner/example_model2.h"
 
 enum MlRunnerIds {
     MlRunnerInference = 71,
