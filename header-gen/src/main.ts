@@ -132,11 +132,3 @@ export function generateDsHexLiteral(blob: ArrayBuffer): string {
     hex += '`;\n';
     return hex;
 }
-
-
-if (require.main === module) {
-    const headerBlob = generateBlob(headerData);
-    console.log('Blob:', headerBlob);
-    console.log(`\nC code:\n${generateCArray(headerBlob)}`);
-    console.log(`DeviceScript:\n${generateDsHexLiteral(headerBlob)}`);
-}
