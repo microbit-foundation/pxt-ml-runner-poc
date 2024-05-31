@@ -16,7 +16,8 @@ const ml_model_header_t ml4f_model_example_header = {
     .header_size = 0x23,        // 35
     .model_offset = 0x24,       // 36
     .samples_length = 0x50,     // 80
-    .reserved = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+    .sample_dimensions = 0x03,  // 3
+    .reserved = { 0x00, 0x00, 0x00, 0x00 },
     .number_of_labels = 0x03,
     // 19 bytes + 1 extra null terminators at the end
     .labels = {
@@ -33,7 +34,7 @@ const ml_model_header_t ml4f_model_example_header = {
 
 const unsigned int example_model[ml4f_full_model_size] = {
     // Manually converted ml4f_model_example_header
-    0x4D4F444C, 0x00240023, 0x00000050, 0x03000000,
+    0x4D4F444C, 0x00240023, 0x00030050, 0x03000000,
     0x6B616853, 0x74530065, 0x006C6C69, 0x63726943,
     0x0000656C,
 

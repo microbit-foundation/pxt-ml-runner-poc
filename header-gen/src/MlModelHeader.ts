@@ -5,5 +5,6 @@
  */
 export type MlModelHeader = {
     samples_length: number;
+    sample_dimensions: number;
     labels: string[];
 };

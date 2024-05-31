@@ -17,9 +17,9 @@ extern "C" {
 #endif
 
 typedef struct {
-    bool (*init)(const int samples, const int outputLength);
+    bool (*init)(const int samples, const int dimensions, const int output_length);
     void (*deinit)(void);
-    void (*recordAccData)(const int x, const int y, const int z);
+    bool (*recordAccData)(const float* sample, const int dimensions);
     bool (*isDataReady)(void);
     float* (*getModelInputData)(void);
 } MlDataProcessor_t;

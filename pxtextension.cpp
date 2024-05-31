@@ -10,10 +10,11 @@ enum MlRunnerIds {
 
 enum MlRunnerError {
     ErrorModelNotPresent = 800,
-    ErrorSamplesLength = 801,
-    ErrorInputLength = 802,
-    ErrorMemAlloc = 803,
-    ErrorModelInference = 804,
+    ErrorSamplesLength,
+    ErrorSamplesDimension,
+    ErrorInputLength,
+    ErrorMemAlloc,
+    ErrorModelInference,
 };
 
 static bool initialised = false;
@@ -57,8 +58,16 @@ namespace mlrunner {
     void recordAccData(MicroBitEvent) {
         if (!initialised) return;
 
-        mlDataProcessor.recordAccData(
-            uBit.accelerometer.getX(), uBit.accelerometer.getY(), uBit.accelerometer.getZ());
+        const float accData[3] = {
+            uBit.accelerometer.getX() / 1000.0f,
+            uBit.accelerometer.getY() / 1000.0f,
+            uBit.accelerometer.getZ() / 1000.0f,
+        };
+        bool success = mlDataProcessor.recordAccData(accData, 3);
+        if (!success) {
+            DEBUG_PRINT("Failed to record accelerometer data\n");
+            return;
+        }
 
         if (mlDataProcessor.isDataReady()) {
             // Stop firing timer events while running model and resume after
@@ -97,20 +106,27 @@ namespace mlrunner {
         }
 
         const int samplesLen = ml_getSamplesLength();
+        DEBUG_PRINT("\tModel samples length: %d\n", samplesLen);
         if (samplesLen <= 0) {
             DEBUG_PRINT("Model samples length invalid\n");
             uBit.panic(MlRunnerError::ErrorSamplesLength);
         }
-        DEBUG_PRINT("\tModel samples length: %d\n", samplesLen);
+
+        const int sampleDimensions = ml_getSampleDimensions();
+        DEBUG_PRINT("\tModel sample dimensions: %d\n", sampleDimensions);
+        if (sampleDimensions != 3) {
+            DEBUG_PRINT("Model sample dimensions invalid\n");
+            uBit.panic(MlRunnerError::ErrorSamplesDimension);
+        }
 
         const int inputLen = ml_getInputLength();
+        DEBUG_PRINT("\tModel input length: %d\n", inputLen);
         if (inputLen <= 0) {
             DEBUG_PRINT("Model input length invalid\n");
             uBit.panic(MlRunnerError::ErrorInputLength);
         }
-        DEBUG_PRINT("\tModel input length: %d\n", inputLen);
 
-        bool success = mlDataProcessor.init(samplesLen, inputLen);
+        bool success = mlDataProcessor.init(samplesLen, sampleDimensions, inputLen);
         if (!success) {
             uBit.panic(MlRunnerError::ErrorMemAlloc);
         }

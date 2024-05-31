@@ -15,7 +15,8 @@
  *     uint16_t header_size;
  *     uint16_t model_offset;
  *     uint16_t samples_length;
- *     uint8_t reserved[5];
+ *     uint16_t sample_dimensions;
+ *     uint8_t reserved[4];
  *     uint8_t number_of_labels;
  *     char labels[];
  * } ml_model_header_t;
@@ -29,7 +30,8 @@ const CONST_SIZES = {
     header_size: 2,
     model_offset: 2,
     samples_length: 2,
-    reserved: 5,
+    sample_dimensions: 1,
+    reserved: 4,
     number_of_labels: 1,
 };
 
@@ -58,43 +60,54 @@ export function generateBlob(data: MlModelHeader): ArrayBuffer {
     const view = new DataView(buffer);
     let offset = 0;
 
-    // uint32_t magic0
-    view.setUint32(offset, HEADER_MAGIC, true);
-    offset += CONST_SIZES.magic0;
+    offset = addToView(view, offset, HEADER_MAGIC, CONST_SIZES.magic0);
+    offset = addToView(view, offset, headerSize, CONST_SIZES.header_size);
+    offset = addToView(view, offset, modelOffset, CONST_SIZES.model_offset);
+    offset = addToView(view, offset, data.samples_length, CONST_SIZES.samples_length);
+    offset = addToView(view, offset, data.sample_dimensions, CONST_SIZES.sample_dimensions);
 
-    // uint16_t header_size
-    view.setUint16(offset, headerSize, true);
-    offset += CONST_SIZES.header_size;
-
-    // uint16_t model_offset
-    view.setUint16(offset, modelOffset, true);
-    offset += CONST_SIZES.model_offset;
-
-    // uint16_t samples_length
-    view.setUint16(offset, data.samples_length, true);
-    offset += CONST_SIZES.samples_length;
-
-    // uint8_t reserved[]
+    // Add reserved bytes as zeros
     for (let i = 0; i < CONST_SIZES.reserved; i++) {
-        view.setUint8(offset, 0);
-        offset += 1;
+        offset = addToView(view, offset, 0, 1);
     }
 
-    // uint8_t number_of_labels
-    view.setUint8(offset, data.labels.length);
-    offset += CONST_SIZES.number_of_labels;
+    offset = addToView(view, offset, data.labels.length, CONST_SIZES.number_of_labels);
 
     // Add labels as a null-terminated strings
     data.labels.forEach(label => {
         for (let i = 0; i < label.length; i++) {
-            view.setUint8(offset, label.charCodeAt(i));
-            offset += 1;
+            offset = addToView(view, offset, label.charCodeAt(i), 1);
         }
-        view.setUint8(offset, 0); // null terminator
-        offset += 1;
+        offset = addToView(view, offset, 0, 1); // null terminator
     });
 
     return buffer;
+}
+
+/**
+ * Add a value to a DataView at a given offset.
+ *
+ * @param view The DataView to add the value to.
+ * @param offset The offset to add the value at.
+ * @param value The value to add.
+ * @param size The size of the value in bytes.
+ * @returns The new offset after adding the value.
+ */
+function addToView(view: DataView, offset: number, value: number, size: number): number {
+    switch (size) {
+        case 1:
+            view.setUint8(offset, value);
+            break;
+        case 2:
+            view.setUint16(offset, value, true);
+            break;
+        case 4:
+            view.setUint32(offset, value, true);
+            break;
+        default:
+            throw new Error('Invalid size');
+    }
+    return offset + size;
 }
 
 /**
