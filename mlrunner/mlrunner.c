@@ -85,6 +85,14 @@ bool ml_isModelPresent() {
     return MODEL_ADDRESS != NULL;
 }
 
+int ml_getSamplesLength() {
+    const ml_model_header_t* const model_header = (ml_model_header_t*)MODEL_ADDRESS;
+    if (model_header == NULL) {
+        return -1;
+    }
+    return model_header->samples_length;
+}
+
 int ml_getInputLength() {
     ml4f_header_t *ml4f_model = get_ml4f_model();
     if (ml4f_model == NULL) {

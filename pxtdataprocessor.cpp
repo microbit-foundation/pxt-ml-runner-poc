@@ -27,55 +27,69 @@ static float (*filters[])(float*, int) = {
     filterZcr,
     filterRms,
 };
+static const size_t filterSize = sizeof(filters) / sizeof(filters[0]);
+static const size_t modelInputSize = filterSize * DATA_AXIS;
 
 static float *accDataX;
 static float *accDataY;
 static float *accDataZ;
-static float *outputData;
-static int filterSize;
+static float outputData[modelInputSize];
+
 static int accSamples;
 static int accDataIndex;
 static bool initialised = false;
 
-bool pxtDataProcessor_init(int samples) {
-    initialised = false;
+static bool pxtDataProcessor_init(const int samples, const int outputLength);
+static void pxtDataProcessor_deinit();
+static void pxtDataProcessor_recordAccData(const int x, const int y, const int z);
+static bool pxtDataProcessor_isDataReady();
+static float* pxtDataProcessor_getModelInputData();
+
+bool pxtDataProcessor_init(const int samples, const int outputLength) {
+    if (samples <= 0 || outputLength <= 0) {
+        pxtDataProcessor_deinit();
+        return false;
+    }
+
+    // The model for this DataProcessor only takes 8 filter outputs per axis
+    if (outputLength != modelInputSize) {
+        pxtDataProcessor_deinit();
+        return false;
+    }
+
+    if (initialised) {
+        pxtDataProcessor_deinit();
+    }
+
     accDataX = (float*)malloc(samples * sizeof(float));
     if (accDataX == NULL) {
+        pxtDataProcessor_deinit();
         return false;
     }
     accDataY = (float*)malloc(samples * sizeof(float));
     if (accDataY == NULL) {
-        free(accDataX);
+        pxtDataProcessor_deinit();
         return false;
     }
     accDataZ = (float*)malloc(samples * sizeof(float));
     if (accDataZ == NULL) {
-        free(accDataX);
-        free(accDataY);
+        pxtDataProcessor_deinit();
         return false;
     }
     accSamples = samples;
     accDataIndex = 0;
-    filterSize = sizeof(filters) / sizeof(filters[0]);
-    outputData = (float*)malloc(filterSize * DATA_AXIS * sizeof(float));
-    if (outputData == NULL) {
-        free(accDataX);
-        free(accDataY);
-        free(accDataZ);
-        return false;
-    }
     initialised = true;
     return true;
 }
 
 void pxtDataProcessor_deinit() {
+    initialised = false;
     free(accDataX);
     free(accDataY);
     free(accDataZ);
-    free(outputData);
 }
 
-void pxtDataProcessor_recordAccData(int x, int y, int z) {
+void pxtDataProcessor_recordAccData(const int x, const int y, const int z) {
     if (!initialised) return;
 
     accDataX[accDataIndex] = x / 1000.0f;

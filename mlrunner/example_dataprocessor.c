@@ -14,6 +14,9 @@
 
 #if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 2
 
+// To represent the accelerometer data x, y, z
+static const int DATA_AXIS = 3;
+
 static float *accData = NULL;
 static int accDataSize = 0;
 static int accDataIndex = 0;
@@ -25,14 +28,14 @@ static void mlDataProcessorExample_deinit() {
     accDataIndex = 0;
 }
 
-static bool mlDataProcessorExample_init(const int samples) {
-    if (samples <= 0) {
+static bool mlDataProcessorExample_init(const int samples, const int outputLength) {
+    if (samples <= 0 || outputLength <= 0) {
         return false;
     }
     if (accData != NULL) {
         mlDataProcessorExample_deinit();
     }
-    accDataSize = samples * 3;
+    accDataSize = samples * DATA_AXIS;
     accData = (float*)malloc(accDataSize * sizeof(float));
     if (accData == NULL) {
         return false;

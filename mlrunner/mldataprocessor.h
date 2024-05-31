@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 typedef struct {
-    bool (*init)(const int samples);
+    bool (*init)(const int samples, const int outputLength);
     void (*deinit)(void);
     void (*recordAccData)(const int x, const int y, const int z);
     bool (*isDataReady)(void);

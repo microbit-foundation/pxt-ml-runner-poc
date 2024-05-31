@@ -15,25 +15,25 @@ const ml_model_header_t ml4f_model_example_header = {
     .magic0 = MODEL_HEADER_MAGIC0,
     .header_size = 0x23,        // 35
     .model_offset = 0x24,       // 36
+    .samples_length = 0x50,     // 80
     .reserved = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
     .number_of_labels = 0x03,
-    // 33 bytes + 3 extra null terminators at the end
+    // 19 bytes + 1 extra null terminators at the end
     .labels = {
         "Shake\0"
         "Still\0"
-        "Standing\0"
-        "Circle\0\0\0"
+        "Circle\0"
     }
 };
 */
 
-#define ml4f_model_example_header_len   52
+#define ml4f_model_example_header_len   36
 #define ml4f_model_example_size         860
 #define ml4f_full_model_size            (ml4f_model_example_header_len + ml4f_model_example_size)
 
 const unsigned int example_model[ml4f_full_model_size] = {
     // Manually converted ml4f_model_example_header
-    0x4D4F444C, 0x00240023, 0x00000000, 0x03000000,
+    0x4D4F444C, 0x00240023, 0x00000050, 0x03000000,
     0x6B616853, 0x74530065, 0x006C6C69, 0x63726943,
     0x0000656C,
 

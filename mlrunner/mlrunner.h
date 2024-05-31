@@ -26,8 +26,9 @@ const uint32_t MODEL_HEADER_MAGIC0 = 0x4D4F444C;
 typedef struct ml_model_header_t {
     uint32_t magic0;
     uint16_t header_size;      // Size of this header + all label strings
-    uint16_t model_offset;     // header_size + padding to 4 bytes
-    uint8_t reserved[7];
+    uint16_t model_offset;     // header_size + padding for 4-byte alignment
+    uint16_t samples_length;   // Number of samples used per inference, not counting dimensions
+    uint8_t reserved[5];
     uint8_t number_of_labels;  // Only 255 labels supported
     char labels[];             // Mutiple null-terminated strings, as many as number_of_labels
 } ml_model_header_t;
@@ -60,9 +61,18 @@ bool ml_setModel(void *model_address);
 bool ml_isModelPresent();
 
 /**
+ * @brief Get the number of samples required for the model.
+ *
+ * @return The number of samples required for the model.
+ *         Or -1 if the model is not present.
+ */
+int ml_getSamplesLength();
+
+/**
  * @brief Get the input length of the model.
  *
  * @return The number of input elements required for the model.
+ *         Or -1 if the model is not present.
  */
 int ml_getInputLength();
 

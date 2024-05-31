@@ -10,9 +10,10 @@ enum MlRunnerIds {
 
 enum MlRunnerError {
     ErrorModelNotPresent = 800,
-    ErrorInputLength = 801,
-    ErrorMemAlloc = 802,
-    ErrorModelInference = 803,
+    ErrorSamplesLength = 801,
+    ErrorInputLength = 802,
+    ErrorMemAlloc = 803,
+    ErrorModelInference = 804,
 };
 
 static bool initialised = false;
@@ -95,18 +96,21 @@ namespace mlrunner {
             uBit.panic(MlRunnerError::ErrorModelNotPresent);
         }
 
+        const int samplesLen = ml_getSamplesLength();
+        if (samplesLen <= 0) {
+            DEBUG_PRINT("Model samples length invalid\n");
+            uBit.panic(MlRunnerError::ErrorSamplesLength);
+        }
+        DEBUG_PRINT("\tModel samples length: %d\n", samplesLen);
+
         const int inputLen = ml_getInputLength();
         if (inputLen <= 0) {
             DEBUG_PRINT("Model input length invalid\n");
             uBit.panic(MlRunnerError::ErrorInputLength);
         }
-        if (inputLen % 3 != 0) {
-            DEBUG_PRINT("Model input length not divisible by 3\n");
-            uBit.panic(MlRunnerError::ErrorInputLength);
-        }
         DEBUG_PRINT("\tModel input length: %d\n", inputLen);
 
-        bool success = mlDataProcessor.init(inputLen / 3);
+        bool success = mlDataProcessor.init(samplesLen, inputLen);
         if (!success) {
             uBit.panic(MlRunnerError::ErrorMemAlloc);
         }
