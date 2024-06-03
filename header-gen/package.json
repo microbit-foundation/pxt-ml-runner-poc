@@ -14,9 +14,11 @@
     "start": "ts-node --project tsconfig.cli.json src/cli.ts",
     "test": "jest",
     "prepare": "tsc",
-    "build": "tsc"
+    "build": "tsc",
+    "ci:update-version": "update-ci-version"
   },
   "devDependencies": {
+    "@microbit-foundation/npm-package-versioner": "^2.0.1",
     "@types/jest": "^29.5.12",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.4",
