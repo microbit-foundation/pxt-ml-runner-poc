@@ -102,21 +102,6 @@ example model included in this extension.
 This flag name is expanded to `DEVICE_MLRUNNER_USE_EXAMPLE_MODEL` in the
 source code.
 
-### Debug messages
-
-To enable debug print from this extension, add the following into your
-pxt.json file:
-
-```json
-{
-    "yotta": {
-        "config": {
-            "ML_DEBUG_PRINT": 1
-        }
-    }
-}
-```
-
 
 ## License
 This software is under the MIT open source license.

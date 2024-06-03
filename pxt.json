@@ -7,8 +7,6 @@
     },
     "files": [
         "README.md",
-        "shims.d.ts",
-        "enums.d.ts",
         "mlrunner/ml4f.h",
         "mlrunner/ml4f.c",
         "mlrunner/mlrunner.h",
