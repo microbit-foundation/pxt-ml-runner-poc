@@ -44,8 +44,13 @@ static bool is_model_valid(void* model_address) {
     if (model_header->magic0 != MODEL_HEADER_MAGIC0) {
         return false;
     }
-    // We should have at least one label
-    if (model_header->number_of_labels == 0) {
+    // We should have at least one label, and samples period, length and dimensions
+    if (
+        model_header->number_of_labels == 0 ||
+        model_header->samples_period == 0 ||
+        model_header->samples_length == 0 ||
+        model_header->sample_dimensions == 0
+    ) {
         return false;
     }
     // Also check the ML4F header magic values to ensure it's there too
@@ -83,6 +88,14 @@ bool ml_setModel(void *model_address) {
 
 bool ml_isModelPresent() {
     return MODEL_ADDRESS != NULL;
+}
+
+int ml_getSamplesPeriod() {
+    const ml_model_header_t* const model_header = (ml_model_header_t*)MODEL_ADDRESS;
+    if (model_header == NULL) {
+        return -1;
+    }
+    return model_header->samples_period;
 }
 
 int ml_getSamplesLength() {

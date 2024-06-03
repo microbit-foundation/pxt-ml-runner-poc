@@ -13,8 +13,9 @@
 #include <mlrunner.h>
 const ml_model_header_t ml4f_model_example_header = {
     .magic0 = MODEL_HEADER_MAGIC0,
-    .header_size = 0x23,        // 35
-    .model_offset = 0x24,       // 36
+    .header_size = 0x27,        // 39
+    .model_offset = 0x28,       // 40
+    .samples_period = 0x19,     // 25
     .samples_length = 0x50,     // 80
     .sample_dimensions = 0x03,  // 3
     .reserved = { 0x00, 0x00, 0x00, 0x00 },
@@ -28,15 +29,16 @@ const ml_model_header_t ml4f_model_example_header = {
 };
 */
 
-#define ml4f_model_example_header_len   36
+// Sizes in number of elements
+#define ml4f_model_example_header_len   10
 #define ml4f_model_example_size         860
 #define ml4f_full_model_size            (ml4f_model_example_header_len + ml4f_model_example_size)
 
 const unsigned int example_model[ml4f_full_model_size] = {
     // Manually converted ml4f_model_example_header
-    0x4D4F444C, 0x00240023, 0x00030050, 0x03000000,
-    0x6B616853, 0x74530065, 0x006C6C69, 0x63726943,
-    0x0000656C,
+    0x4D4F444C, 0x00280027, 0x00500019, 0x00000003,
+    0x03000000, 0x6B616853, 0x74530065, 0x006C6C69,
+    0x63726943, 0x0000656C,
 
     // ML4F model
     0x30470f62, 0x46344c4d, 0x00000050, 0x00000d70, 0x000005a4, 0x00000000, 0x00000000, 0x000000a8, 

@@ -11,9 +11,10 @@
     ErrorModelNotPresent = 800,
     ErrorSamplesLength = 801,
     ErrorSamplesDimension = 802,
-    ErrorInputLength = 803,
-    ErrorMemAlloc = 804,
-    ErrorModelInference = 805,
+    ErrorSamplesPeriod = 803,
+    ErrorInputLength = 804,
+    ErrorMemAlloc = 805,
+    ErrorModelInference = 806,
     }
 
 // Auto-generated. Do not edit. Really.

@@ -12,6 +12,7 @@ enum MlRunnerError {
     ErrorModelNotPresent = 800,
     ErrorSamplesLength,
     ErrorSamplesDimension,
+    ErrorSamplesPeriod,
     ErrorInputLength,
     ErrorMemAlloc,
     ErrorModelInference,
@@ -19,7 +20,6 @@ enum MlRunnerError {
 
 static bool initialised = false;
 
-static const CODAL_TIMESTAMP ML_CODAL_TIMER_PERIOD = 25;
 static const uint16_t ML_CODAL_TIMER_VALUE = 1;
 
 // Enable/disable debug print to serial, can be set in pxt.json
@@ -119,6 +119,13 @@ namespace mlrunner {
             uBit.panic(MlRunnerError::ErrorSamplesDimension);
         }
 
+        const int samplesPeriodMillisec = ml_getSamplesPeriod();
+        DEBUG_PRINT("\tModel samples period: %d\n", samplesPeriodMillisec);
+        if (samplesPeriodMillisec <= 0) {
+            DEBUG_PRINT("Model samples period invalid\n");
+            uBit.panic(MlRunnerError::ErrorSamplesPeriod);
+        }
+
         const int inputLen = ml_getInputLength();
         DEBUG_PRINT("\tModel input length: %d\n", inputLen);
         if (inputLen <= 0) {
@@ -133,7 +140,7 @@ namespace mlrunner {
 
         // Set up background timer to collect data and run model
         uBit.messageBus.listen(MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE, &recordAccData, MESSAGE_BUS_LISTENER_DROP_IF_BUSY);
-        uBit.timer.eventEvery(ML_CODAL_TIMER_PERIOD, MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE);
+        uBit.timer.eventEvery(samplesPeriodMillisec, MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE);
 
         initialised = true;
 

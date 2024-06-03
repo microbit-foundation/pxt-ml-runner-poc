@@ -27,9 +27,10 @@ typedef struct ml_model_header_t {
     uint32_t magic0;
     uint16_t header_size;      // Size of this header + all label strings
     uint16_t model_offset;     // header_size + padding for 4-byte alignment
+    uint16_t samples_period;    // Period in ms between samples
     uint16_t samples_length;   // Number of samples used per inference, not counting dimensions
     uint8_t sample_dimensions; // Number of dimensions per sample, e.g. 3 for accelerometer data
-    uint8_t reserved[4];
+    uint8_t reserved[6];
     uint8_t number_of_labels;  // Only 255 labels supported
     char labels[];             // Mutiple null-terminated strings, as many as number_of_labels
 } ml_model_header_t;
@@ -60,6 +61,14 @@ bool ml_setModel(void *model_address);
  * @return True if a model is present, False otherwise.
  */
 bool ml_isModelPresent();
+
+/**
+ * @brief Get the period between samples required for the model.
+ *
+ * @return The period between samples required for the model.
+ *         Or -1 if the model is not present.
+ */
+int ml_getSamplesPeriod();
 
 /**
  * @brief Get the number of samples required for the model.

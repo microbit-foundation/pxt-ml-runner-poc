@@ -14,6 +14,7 @@
  *     uint32_t magic0;
  *     uint16_t header_size;
  *     uint16_t model_offset;
+ *     uint16_t samples_period;
  *     uint16_t samples_length;
  *     uint16_t sample_dimensions;
  *     uint8_t reserved[4];
@@ -29,9 +30,10 @@ const CONST_SIZES = {
     magic0: 4,
     header_size: 2,
     model_offset: 2,
+    samples_period: 2,
     samples_length: 2,
     sample_dimensions: 1,
-    reserved: 4,
+    reserved: 6,
     number_of_labels: 1,
 };
 
@@ -63,6 +65,7 @@ export function generateBlob(data: MlModelHeader): ArrayBuffer {
     offset = addToView(view, offset, HEADER_MAGIC, CONST_SIZES.magic0);
     offset = addToView(view, offset, headerSize, CONST_SIZES.header_size);
     offset = addToView(view, offset, modelOffset, CONST_SIZES.model_offset);
+    offset = addToView(view, offset, data.samples_period, CONST_SIZES.samples_period);
     offset = addToView(view, offset, data.samples_length, CONST_SIZES.samples_length);
     offset = addToView(view, offset, data.sample_dimensions, CONST_SIZES.sample_dimensions);
 
