@@ -4,6 +4,11 @@
  * @copyright
  * Copyright 2024 Micro:bit Educational Foundation.
  * SPDX-License-Identifier: MIT
+ *
+ * @details
+ * This is an ML-Trainer model converted with ML4F.
+ * The model has been trained with 3 classes in this order:
+ * Shake, Still, Circle.
  */
 #pragma once
 

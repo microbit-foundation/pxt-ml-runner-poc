@@ -4,6 +4,11 @@
  * @copyright
  * Copyright 2024 Micro:bit Educational Foundation.
  * SPDX-License-Identifier: MIT
+ *
+ * @details
+ * This is an Keras model converted with ML4F.
+ * The model has been trained with 4 classes in this order:
+ * Jumping, Running, Standing, Walking
  */
 #pragma once
 

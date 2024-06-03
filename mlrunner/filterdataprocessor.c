@@ -11,7 +11,6 @@
 #include <string.h>
 #include "mldataprocessor.h"
 
-#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL != 2
 
 static float **input_samples = NULL;
 static int sample_dimensions = 0;
@@ -146,5 +145,3 @@ MlDataProcessor_t mlDataProcessor = {
     .isDataReady = filterDataProcessor_isDataReady,
     .getProcessedData = filterDataProcessor_getProcessedData
 };
-
-#endif // DEVICE_MLRUNNER_USE_EXAMPLE_MODEL

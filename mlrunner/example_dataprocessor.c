@@ -1,5 +1,5 @@
 /**
- * @brief Data Processor for the Model Example included in mlrunner.
+ * @brief Data Processor for the Model Example 2 included in mlrunner.
  *
  * @copyright
  * Copyright 2024 Micro:bit Educational Foundation.
