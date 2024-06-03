@@ -23,6 +23,7 @@ jobs:
           node-version: "20.x"
           registry-url: "https://npm.pkg.github.com"
           cache: npm
+          cache-dependency-path: header-gen/package-lock.json
       - uses: microbit-foundation/npm-package-versioner-action@v1
       - run: npm ci
         env:
