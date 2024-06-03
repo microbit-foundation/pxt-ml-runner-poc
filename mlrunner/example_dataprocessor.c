@@ -14,62 +14,74 @@
 
 #if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 2
 
-// To represent the accelerometer data x, y, z
-static const int DATA_AXIS = 3;
-
 static float *accData = NULL;
+static int accDimensions = 0;
 static int accDataSize = 0;
 static int accDataIndex = 0;
 
-static void mlDataProcessorExample_deinit() {
+
+static MldpReturn_t exampleDataProcessor_init(const MlDataProcessorConfig_t* config);
+static void exampleDataProcessor_deinit();
+static MldpReturn_t exampleDataProcessor_recordAccData(const float *sample, const int sample_dimensions);
+static bool exampleDataProcessor_isDataReady();
+static float* exampleDataProcessor_getProcessedData();
+
+
+MldpReturn_t exampleDataProcessor_init(const int samples, const int dimensions, const int output_length) {
+    if (samples <= 0 || dimensions <= 0 || outputLength <= 0) {
+        exampleDataProcessor_deinit();
+        return MLDP_ERROR_CONFIG;
+    }
+    if (accData != NULL) {
+        exampleDataProcessor_deinit();
+    }
+    accDataSize = samples * dimensions;
+    accData = (float*)malloc(accDataSize * sizeof(float));
+    if (accData == NULL) {
+        exampleDataProcessor_deinit();
+        return MLDP_ERROR_ALLOC;
+    }
+    accDimensions = dimensions;
+    accDataIndex = 0;
+    return MLDP_SUCCESS;
+}
+
+void exampleDataProcessor_deinit() {
     free(accData);
     accData = NULL;
+    accDimensions = 0;
     accDataSize = 0;
     accDataIndex = 0;
 }
 
-static bool mlDataProcessorExample_init(const int samples, const int outputLength) {
-    if (samples <= 0 || outputLength <= 0) {
-        return false;
-    }
-    if (accData != NULL) {
-        mlDataProcessorExample_deinit();
-    }
-    accDataSize = samples * DATA_AXIS;
-    accData = (float*)malloc(accDataSize * sizeof(float));
-    if (accData == NULL) {
-        return false;
-    }
-    accDataIndex = 0;
-    return true;
-}
+MldpReturn_t exampleDataProcessor_recordAccData(const float* sample, const int dimensions) {
+    if (accData == NULL) return false;
+    if (dimensions != accDimensions) return false;
 
-static void mlDataProcessorExample_recordAccData(const int x, const int y, const int z) {
-    if (accData == NULL) return;
-
-    accData[accDataIndex++] = x / 1000.0f;
-    accData[accDataIndex++] = y / 1000.0f;
-    accData[accDataIndex++] = z / 1000.0f;
+    for (int i = 0; i < dimensions; i++) {
+        accData[accDataIndex++] = sample[i];
+    }
     if (accDataIndex >= accDataSize) {
         accDataIndex = 0;
     }
+    return MLDP_SUCCESS;
 }
 
-static bool mlDataProcessorExample_isDataReady() {
+bool exampleDataProcessor_isDataReady() {
     if (accData == NULL) return false;
     return accDataIndex == 0;
 }
 
-static float* mlDataProcessorExample_getModelInputData() {
+float* exampleDataProcessor_getProcessedData() {
     return accData;
 }
 
 MlDataProcessor_t mlDataProcessor = {
-    .init = mlDataProcessorExample_init,
-    .deinit = mlDataProcessorExample_deinit,
-    .recordAccData = mlDataProcessorExample_recordAccData,
-    .isDataReady = mlDataProcessorExample_isDataReady,
-    .getModelInputData = mlDataProcessorExample_getModelInputData,
+    .init = exampleDataProcessor_init,
+    .deinit = exampleDataProcessor_deinit,
+    .recordAccData = exampleDataProcessor_recordAccData,
+    .isDataReady = exampleDataProcessor_isDataReady,
+    .getProcessedData = exampleDataProcessor_getProcessedData,
 };
 
 #endif // DEVICE_MLRUNNER_USE_EXAMPLE_MODEL

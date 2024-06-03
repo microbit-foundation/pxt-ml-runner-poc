@@ -16,24 +16,47 @@
 extern "C" {
 #endif
 
+// enum for return types
+typedef enum {
+    MLDP_SUCCESS = 0,
+    MLDP_ERROR = -1,
+    MLDP_ERROR_CONFIG = -2,
+    MLDP_ERROR_ALLOC = -3,
+    MLDP_ERROR_NOINIT = -4,
+} MldpReturn_t;
+
 typedef struct {
-    bool (*init)(const int samples, const int dimensions, const int output_length);
+    const int out_size;
+    MldpReturn_t (*filter)(const float *data_in, const int in_size, float *data_out, const int out_size);
+} MlDataFilters_t;
+
+typedef struct {
+    const int samples;
+    const int dimensions;
+    const int output_length;
+    const int filter_size;
+    const MlDataFilters_t *filters;
+} MlDataProcessorConfig_t;
+
+typedef struct {
+    MldpReturn_t (*init)(const MlDataProcessorConfig_t *config);
     void (*deinit)(void);
-    bool (*recordAccData)(const float* sample, const int dimensions);
+    MldpReturn_t (*recordAccData)(const float *sample, const int dimensions);
     bool (*isDataReady)(void);
-    float* (*getModelInputData)(void);
+    float* (*getProcessedData)(void);
 } MlDataProcessor_t;
 
 extern MlDataProcessor_t mlDataProcessor;
 
-float filterMax(float *data, int size);
-float filterMin(float *data, int size);
-float filterMean(float *data, int size);
-float filterStdDev(float *data, int size);
-float filterPeaks(float *data, int size);
-float filterTotalAcc(float *data, int size);
-float filterZcr(float *data, int size);
-float filterRms(float *data, int size);
+MldpReturn_t filterMax(const float *data_in, const int in_size, float *data_out, const int out_size);
+MldpReturn_t filterMin(const float *data_in, const int in_size, float *data_out, const int out_size);
+MldpReturn_t filterMean(const float *data_in, const int in_size, float *data_out, const int out_size);
+MldpReturn_t filterStdDev(const float *data_in, const int in_size, float *data_out, const int out_size);
+MldpReturn_t filterPeaks(const float *data_in, const int in_size, float *data_out, const int out_size);
+MldpReturn_t filterTotalAcc(const float *data_in, const int in_size, float *data_out, const int out_size);
+MldpReturn_t filterZcr(const float *data_in, const int in_size, float *data_out, const int out_size);
+MldpReturn_t filterRms(const float *data_in, const int in_size, float *data_out, const int out_size);
+MldpReturn_t filterPassThrough(const float *data_in, const int in_size, float *data_out, const int out_size);
 
 #ifdef __cplusplus
 }

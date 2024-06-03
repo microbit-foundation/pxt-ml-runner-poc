@@ -10,71 +10,112 @@
 #include <string.h>
 #include "mldataprocessor.h"
 
-float filterMax(float *data, int size) {
-    float max = data[0];
-    for (int i = 1; i < size; i++) {
-        if (data[i] > max) {
-            max = data[i];
+MldpReturn_t filterMax(const float *data_in, const int in_size, float *data_out, const int out_size) {
+    if (in_size < 1 || out_size != 1) {
+        return MLDP_ERROR_CONFIG;
+    }
+
+    float max = data_in[0];
+    for (int i = 1; i < in_size; i++) {
+        if (data_in[i] > max) {
+            max = data_in[i];
         }
     }
-    return max;
+    *data_out = max;
+
+    return MLDP_SUCCESS;
 }
 
-float filterMin(float *data, int size) {
-    float min = data[0];
-    for (int i = 1; i < size; i++) {
-        if (data[i] < min) {
-            min = data[i];
+MldpReturn_t filterMin(const float *data_in, const int in_size, float *data_out, const int out_size) {
+    if (in_size < 1 || out_size != 1) {
+        return MLDP_ERROR_CONFIG;
+    }
+
+    float min = data_in[0];
+    for (int i = 1; i < in_size; i++) {
+        if (data_in[i] < min) {
+            min = data_in[i];
         }
     }
-    return min;
+    *data_out = min;
+
+    return MLDP_SUCCESS;
 }
 
-float filterMean(float *data, int size) {
+MldpReturn_t filterMean(const float *data_in, const int in_size, float *data_out, const int out_size) {
+    if (in_size < 1 || out_size != 1) {
+        return MLDP_ERROR_CONFIG;
+    }
+
     float sum = 0;
-    for (int i = 0; i < size; i++) {
-        sum += data[i];
+    for (int i = 0; i < in_size; i++) {
+        sum += data_in[i];
     }
-    return sum / size;
+    *data_out = sum / in_size;
+
+    return MLDP_SUCCESS;
 }
 
 // Standard Deviation
-float filterStdDev(float *data, int size) {
-    float mean = filterMean(data, size);
-    float std = 0;
-    for (int i = 0; i < size; i++) {
-        std += (data[i] - mean) * (data[i] - mean);
+MldpReturn_t filterStdDev(const float *data_in, const int in_size, float *data_out, const int out_size) {
+    if (in_size < 1 || out_size != 1) {
+        return MLDP_ERROR_CONFIG;
     }
-    std /= size;
-    return sqrt(std);
+
+    float mean;
+    MldpReturn_t mean_result = filterMean(data_in, in_size, &mean, 1);
+    if (mean_result != MLDP_SUCCESS) {
+        return mean_result;
+    }
+
+    float std = 0;
+    for (int i = 0; i < in_size; i++) {
+        std += (data_in[i] - mean) * (data_in[i] - mean);
+    }
+    std /= in_size;
+    *data_out = sqrt(std);
+
+    return MLDP_SUCCESS;
 }
 
 // Count the number of peaks
-// Warning! This can allocate 5x the size of the data in the stack
+// Warning! This can allocate 5x the in_size of the data in the stack
 // so ensure DEVICE_STACK_SIZE is appropriately set
 // TODO: Move to the heap, pxt automatically uses its allocator
-float filterPeaks(float *data, int size) {
+MldpReturn_t filterPeaks(const float *data_in, const int in_size, float *data_out, const int out_size) {
+    if (in_size < 5 || out_size != 1) {
+        return MLDP_ERROR_CONFIG;
+    }
+
     const int lag = 5;
     const float threshold = 3.5;
     const float influence = 0.5;
     int peaksCounter = 0;
 
-    float signals[size];
-    float filteredY[size];
+    float signals[in_size];
+    float filteredY[in_size];
     float lead_in[lag];
-    float avgFilter[size];
-    float stdFilter[size];
-    memset(signals, 0, size * sizeof(float));
-    memcpy(filteredY, data, size * sizeof(float));
-    memcpy(lead_in, data, lag * sizeof(float));
-    avgFilter[lag - 1] = filterMean(lead_in, lag);
-    stdFilter[lag - 1] = filterStdDev(lead_in, lag);
+    float avgFilter[in_size];
+    float stdFilter[in_size];
+    memset(signals, 0, in_size * sizeof(float));
+    memcpy(filteredY, data_in, in_size * sizeof(float));
+    memcpy(lead_in, data_in, lag * sizeof(float));
 
-    for (int i = lag; i < size; i++) {
-        if (fabs(data[i] - avgFilter[i - 1]) > 0.1 &&
-            fabs(data[i] - avgFilter[i - 1]) > threshold * stdFilter[i - 1]
+    float mean_lag, stdDev_lag;
+    MldpReturn_t mean_result = filterMean(lead_in, lag, &mean_lag, 1);
+    MldpReturn_t stdDev_result = filterStdDev(lead_in, lag, &stdDev_lag, 1);
+    if (stdDev_result != MLDP_SUCCESS || mean_result != MLDP_SUCCESS) {
+        return MLDP_ERROR_CONFIG;
+    }
+
+    avgFilter[lag - 1] = mean_lag;
+    stdFilter[lag - 1] = stdDev_lag;
+
+    for (int i = lag; i < in_size; i++) {
+        if (fabs(data_in[i] - avgFilter[i - 1]) > 0.1 &&
+            fabs(data_in[i] - avgFilter[i - 1]) > threshold * stdFilter[i - 1]
         ) {
-            if (data[i] > avgFilter[i - 1]) {
+            if (data_in[i] > avgFilter[i - 1]) {
                 signals[i] = +1; // positive signal
                 if (i - 1 > 0 && signals[i - 1] == 0) {
                     peaksCounter++;
@@ -83,49 +124,79 @@ float filterPeaks(float *data, int size) {
                 signals[i] = -1; // negative signal
             }
             // make influence lower
-            filteredY[i] = influence * data[i] + (1 - influence) * filteredY[i - 1];
+            filteredY[i] = influence * data_in[i] + (1 - influence) * filteredY[i - 1];
         } else {
             signals[i] = 0; // no signal
-            filteredY[i] = data[i];
+            filteredY[i] = data_in[i];
         }
 
         // adjust the filters
         float y_lag[lag];
         memcpy(y_lag, &filteredY[i - lag], lag * sizeof(float));
-        avgFilter[i] = filterMean(y_lag, lag);
-        stdFilter[i] = filterStdDev(y_lag, lag);
+        filterMean(y_lag, lag, &mean_lag, 1);
+        filterStdDev(y_lag, lag, &stdDev_lag, 1);
+        avgFilter[i] = mean_lag;
+        stdFilter[i] = stdDev_lag;
     }
-    return peaksCounter;
+    *data_out = peaksCounter;
+
+    return MLDP_SUCCESS;
 }
 
 // Total Absolute Acceleration
-float filterTotalAcc(float *data, int size) {
-    float total = 0;
-    for (int i = 0; i < size; i++) {
-        total += fabs(data[i]);
+MldpReturn_t filterTotalAcc(const float *data_in, const int in_size, float *data_out, const int out_size) {
+    if (in_size < 1 || out_size != 1) {
+        return MLDP_ERROR_CONFIG;
     }
-    return total;
+
+    float total = 0;
+    for (int i = 0; i < in_size; i++) {
+        total += fabs(data_in[i]);
+    }
+    *data_out = total;
+
+    return MLDP_SUCCESS;
 }
 
 // Zero Crossing Rate
-float filterZcr(float *data, int size) {
+MldpReturn_t filterZcr(const float *data_in, const int in_size, float *data_out, const int out_size) {
+    if (in_size < 2 || out_size != 1) {
+        return MLDP_ERROR_CONFIG;
+    }
+
     int count = 0;
-    for (int i = 1; i < size; i++) {
-        if ((data[i] >= 0 && data[i - 1] < 0) ||
-            (data[i] < 0 && data[i - 1] >= 0)) {
+    for (int i = 1; i < in_size; i++) {
+        if ((data_in[i] >= 0 && data_in[i - 1] < 0) ||
+            (data_in[i] < 0 && data_in[i - 1] >= 0)) {
             count++;
         }
     }
-    return count / (size - 1);
+    *data_out = count / (in_size - 1);
 
+    return MLDP_SUCCESS;
 }
 
 // Root Mean Square
-float filterRms(float *data, int size) {
-    float rms = 0;
-    for (int i = 0; i < size; i++) {
-        rms += data[i] * data[i];
+MldpReturn_t filterRms(const float *data_in, const int in_size, float *data_out, const int out_size) {
+    if (in_size < 1 || out_size != 1) {
+        return MLDP_ERROR_CONFIG;
     }
-    rms /= size;
-    return sqrt(rms);
+
+    float rms = 0;
+    for (int i = 0; i < in_size; i++) {
+        rms += data_in[i] * data_in[i];
+    }
+    *data_out = sqrt(rms / in_size);
+
+    return MLDP_SUCCESS;
+}
+
+MldpReturn_t filterPassThrough(const float *data_in, const int in_size, float *data_out, const int out_size) {
+    if (in_size > out_size) {
+        return MLDP_ERROR_CONFIG;
+    }
+
+    memcpy(data_out, data_in, in_size * sizeof(float));
+
+    return MLDP_SUCCESS;
 }
