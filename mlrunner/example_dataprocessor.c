@@ -27,22 +27,30 @@ static bool exampleDataProcessor_isDataReady();
 static float* exampleDataProcessor_getProcessedData();
 
 
-MldpReturn_t exampleDataProcessor_init(const int samples, const int dimensions, const int output_length) {
-    if (samples <= 0 || dimensions <= 0 || outputLength <= 0) {
+MldpReturn_t exampleDataProcessor_init(const MlDataProcessorConfig_t* config) {
+    if (config->samples <= 0 || config->dimensions <= 0 || config->output_length <= 0) {
         exampleDataProcessor_deinit();
         return MLDP_ERROR_CONFIG;
     }
     if (accData != NULL) {
         exampleDataProcessor_deinit();
     }
-    accDataSize = samples * dimensions;
+
+    accDataIndex = 0;
+    accDimensions = config->dimensions;
+    accDataSize = config->samples * config->dimensions;
+
+    if (config->output_length != accDataSize) {
+        exampleDataProcessor_deinit();
+        return MLDP_ERROR_CONFIG;
+    }
+
     accData = (float*)malloc(accDataSize * sizeof(float));
     if (accData == NULL) {
         exampleDataProcessor_deinit();
         return MLDP_ERROR_ALLOC;
     }
-    accDimensions = dimensions;
-    accDataIndex = 0;
+
     return MLDP_SUCCESS;
 }
 
