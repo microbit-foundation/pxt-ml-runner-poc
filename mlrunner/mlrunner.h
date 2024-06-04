@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 // ASCII for "MODL"
-const uint32_t MODEL_HEADER_MAGIC0 = 0x4D4F444C;
+#define MODEL_HEADER_MAGIC0 0x4D4F444C
 
 typedef struct ml_model_header_t {
     uint32_t magic0;
