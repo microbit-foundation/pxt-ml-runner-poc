@@ -1,10 +1,18 @@
 name: Header Generator Tests
 
 on:
+  release:
+    types: [created]
   push:
     branches: '*'
+    paths:
+    - "header-gen/**"
+    - "**/header-gen.yml"
   pull_request:
     branches: '*'
+    paths:
+    - "header-gen/**"
+    - "**/header-gen.yml"
 
 jobs:
   build-and-test:
@@ -18,10 +26,18 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+        registry-url: "https://npm.pkg.github.com"
+        cache: npm
+        cache-dependency-path: header-gen/package-lock.json
 
     - name: Install Dependencies
       run: npm ci
       working-directory: ./header-gen
+
+    - name: Update version
+      uses: microbit-foundation/npm-package-versioner-action@v1
+      with:
+        working-directory: ./header-gen
 
     - name: Build
       run: npm run build
@@ -30,3 +46,9 @@ jobs:
     - name: Run Jest Tests
       run: npm test
       working-directory: ./header-gen
+
+    - name: Publish
+      run: npm publish
+      if: github.ref == 'refs/heads/main' || github.event_name == 'release' && github.event.action == 'created'
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
