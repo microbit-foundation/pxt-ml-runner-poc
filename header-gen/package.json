@@ -14,8 +14,7 @@
     "start": "ts-node --project tsconfig.cli.json src/cli.ts",
     "test": "jest",
     "prepare": "tsc",
-    "build": "tsc",
-    "ci:update-version": "update-ci-version"
+    "build": "tsc"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",

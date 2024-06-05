@@ -31,7 +31,6 @@ jobs:
       - uses: microbit-foundation/npm-package-versioner-action@working-directory
         with:
           working-directory: ./header-gen
-      - run: npm run ci:update-version
       - run: npm run build
       - run: npm publish
         if: github.ref == 'refs/heads/main' || github.event_name == 'release' && github.event.action == 'created'
