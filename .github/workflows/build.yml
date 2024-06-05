@@ -28,7 +28,7 @@ jobs:
       - run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: microbit-foundation/npm-package-versioner-action@working-directory
+      - uses: microbit-foundation/npm-package-versioner-action@v1
         with:
           working-directory: ./header-gen
       - run: npm run build
