@@ -28,6 +28,7 @@ jobs:
       - run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: microbit-foundation/npm-package-versioner-action@working-directory
       - run: npm run ci:update-version
       - run: npm run build
       - run: npm publish
