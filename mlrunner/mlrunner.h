@@ -7,8 +7,10 @@
  *
  * @details
  * The ML4F model has its own header, but does not include the labels.
- * So an extra header with the labels is added on top.
- * We call the "full model" the labels header + the ML4F model.
+ * So an extra header with the labels and other information is added on top.
+ * This header beginning and end is 4-byte aligned, with padding zeros at the
+ * end if needed, so that the ML4F model is placed directly after it.
+ * We call the "full model" the custom header + the ML4F model.
  */
 #pragma once
 
@@ -30,17 +32,16 @@ typedef struct __attribute__((packed)) ml_action_s {
 } ml_action_t;
 const size_t ml_action_size_without_label = 5;
 
-typedef struct __attribute__((packed)) ml_model_header_s {
+typedef struct __attribute__((packed, aligned(4))) ml_model_header_s {
     const uint32_t magic0;
-    const uint16_t header_size;         // Size of this header + all label strings
-    const uint16_t model_offset;        // header_size + padding for 4-byte alignment
+    const uint16_t header_size;         // Size of this header including all actions, padded to 4 bytes
     const uint16_t samples_period;      // Period in ms between samples
     const uint16_t samples_length;      // Number of samples used per inference, not counting dimensions
     const uint8_t sample_dimensions;    // Number of dimensions per sample, e.g. 3 for accelerometer data
-    const uint8_t reserved[6];
+    const uint8_t reserved[8];
     const uint8_t number_of_actions;    // Only 255 actions supported
     const ml_action_t actions[0];       // As many actions as number_of_actions, the size of each is variable
-                                        // Each action is 4-byte aligned and padded with zeros
+                                        // Each action is 4-byte aligned, and padded zeros at the end if needed
 } ml_model_header_t;
 
 typedef struct ml_labels_s {

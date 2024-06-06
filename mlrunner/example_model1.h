@@ -34,11 +34,10 @@ static const int example_mlDataFiltersLen = sizeof(example_mlDataFilters) / size
 const ml_model_header_t ml4f_model_example_header = {
     .magic0 = MODEL_HEADER_MAGIC0,
     .header_size = 0x38,        // 56
-    .model_offset = 0x38,       // 56
     .samples_period = 0x19,     // 25
     .samples_length = 0x50,     // 80
     .sample_dimensions = 0x03,  // 3
-    .reserved = { 0x00, 0x00, 0x00, 0x00 },
+    .reserved = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
     .number_of_actions = 0x03,
     .actions = {
         {0.8, 8, "Shake" },   // 1 bytes padding
@@ -53,9 +52,9 @@ const ml_model_header_t ml4f_model_example_header = {
 #define ml4f_model_example_size         860
 #define ml4f_full_model_size            (ml4f_model_example_header_len + ml4f_model_example_size)
 
-const unsigned int example_model[ml4f_full_model_size] = {
+const unsigned int example_model[ml4f_full_model_size] __attribute__((aligned(4))) = {
     // Manually converted ml4f_model_example_header
-    0x4D4F444C, 0x00380038, 0x00500019, 0x00000003,
+    0x4D4F444C, 0x00190038, 0x00030050, 0x00000000,
     0x03000000, 0x3F4CCCCD, 0x61685306, 0x0000656B,
     0x3F4CCCCD, 0x69745306, 0x00006C6C, 0x3F4CCCCD,
     0x72694307, 0x00656C63,

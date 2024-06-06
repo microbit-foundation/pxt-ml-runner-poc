@@ -19,11 +19,10 @@
  * typedef struct ml_model_header_t {
  *     uint32_t magic0;
  *     uint16_t header_size;
- *     uint16_t model_offset;
  *     uint16_t samples_period;
  *     uint16_t samples_length;
  *     uint16_t sample_dimensions;
- *     uint8_t reserved[6];
+ *     uint8_t reserved[8];
  *     const uint8_t number_of_actions;
  *     const ml_action_t actions[0];
  * } ml_model_header_t;
@@ -34,11 +33,10 @@ const HEADER_MAGIC = 0x4D4F444C;
 const CONST_SIZES = {
     magic0: 4,
     header_size: 2,
-    model_offset: 2,
     samples_period: 2,
     samples_length: 2,
     sample_dimensions: 1,
-    reserved: 6,
+    reserved: 8,
     number_of_actions: 1,
 };
 const ACTION_HEADER_SIZES = {
@@ -59,32 +57,23 @@ const ACTION_HEADER_SIZES = {
 export function generateBlob(data: MlModelHeader): ArrayBuffer {
     // Calculate size of the actions and labels within, including null terminators and padding
     const fixedActionSize = Object.values(ACTION_HEADER_SIZES).reduce((acc, size) => acc + size, 0);
-    let structPadding = 0;
     let actionsSize = data.actions.reduce((acc, action) => {
         const actionStructSize = fixedActionSize + action.label.length;
-        // Each action struct is aligned to 4 bytes
-        structPadding = (actionStructSize % 4 === 0) ? 0 : 4 - (actionStructSize % 4);
+        // Each action struct is padded at the end to align to 4 bytes
+        const structPadding = (actionStructSize % 4 === 0) ? 0 : 4 - (actionStructSize % 4);
         return acc + actionStructSize + structPadding;
     }, 0);
-    // The last padding is not needed
-    actionsSize -= structPadding;
 
     // Header size  = fixed size values + size of all actions
     const fixedHeaderSize = Object.values(CONST_SIZES).reduce((acc, size) => acc + size, 0);
     const headerSize = fixedHeaderSize + actionsSize;
 
-    // The model offset is aligned to 4 bytes, as the actions are also aligned
-    // to 4 bytes, we can check the alignment is already satisfied
-    const headerPadding = (headerSize % 4 === 0) ? 0 : 4 - (headerSize % 4);
-    const modelOffset = headerSize + headerPadding;
-
-    const buffer = new ArrayBuffer(modelOffset);
+    const buffer = new ArrayBuffer(headerSize);
     const view = new DataView(buffer);
     let offset = 0;
 
     offset = addToView(view, offset, HEADER_MAGIC, CONST_SIZES.magic0);
     offset = addToView(view, offset, headerSize, CONST_SIZES.header_size);
-    offset = addToView(view, offset, modelOffset, CONST_SIZES.model_offset);
     offset = addToView(view, offset, data.samples_period, CONST_SIZES.samples_period);
     offset = addToView(view, offset, data.samples_length, CONST_SIZES.samples_length);
     offset = addToView(view, offset, data.sample_dimensions, CONST_SIZES.sample_dimensions);

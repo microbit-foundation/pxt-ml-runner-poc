@@ -27,7 +27,7 @@ static bool is_model_valid(void* model_address) {
         return false;
     }
     // Also check the ML4F header magic values to ensure it's there too
-    ml4f_header_t *ml4f_model = (ml4f_header_t *)((uint32_t)model_header + model_header->model_offset);
+    ml4f_header_t *ml4f_model = (ml4f_header_t *)((uint32_t)model_header + model_header->header_size);
     if (ml4f_model->magic0 != ML4F_MAGIC0 || ml4f_model->magic1 != ML4F_MAGIC1) {
         return false;
     }
@@ -44,7 +44,7 @@ static ml4f_header_t* get_ml4f_model() {
         return NULL;
     }
     ml_model_header_t *model_header = (ml_model_header_t *)MODEL_ADDRESS;
-    return (ml4f_header_t *)((uint32_t)model_header + model_header->model_offset);
+    return (ml4f_header_t *)((uint32_t)model_header + model_header->header_size);
 }
 
 /*****************************************************************************/
