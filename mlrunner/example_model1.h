@@ -14,6 +14,21 @@
 
 #if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 1
 
+#include "mldataprocessor.h"
+
+// These are the accelerometer data filters needed for the model input data
+static const MlDataFilters_t example_mlDataFilters[] = {
+    {1, filterMax},
+    {1, filterMean},
+    {1, filterMin},
+    {1, filterStdDev},
+    {1, filterPeaks},
+    {1, filterTotalAcc},
+    {1, filterZcr},
+    {1, filterRms},
+};
+static const int example_mlDataFiltersLen = sizeof(example_mlDataFilters) / sizeof(example_mlDataFilters[0]);
+
 /* This is a struct representation of the header included at the beginning of model_example
 #include <mlrunner.h>
 const ml_model_header_t ml4f_model_example_header = {

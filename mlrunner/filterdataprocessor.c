@@ -25,7 +25,7 @@ static bool initialised = false;
 
 static MldpReturn_t filterDataProcessor_init(const MlDataProcessorConfig_t* config);
 static void filterDataProcessor_deinit();
-static MldpReturn_t filterDataProcessor_recordAccData(const float *sample, const int sample_dimensions);
+static MldpReturn_t filterDataProcessor_recordData(const float *samples, const int elements);
 static bool filterDataProcessor_isDataReady();
 static float* filterDataProcessor_getProcessedData();
 
@@ -98,17 +98,22 @@ void filterDataProcessor_deinit() {
     sample_index = 0;
 }
 
-MldpReturn_t filterDataProcessor_recordAccData(const float* sample, const int dimensions) {
+MldpReturn_t filterDataProcessor_recordData(const float* samples, const int elements) {
     if (!initialised) return MLDP_ERROR_NOINIT;
-    if (sample_dimensions != dimensions) return MLDP_ERROR_CONFIG;
+    // Only record data if the number of elements is a multiple of the sample dimensions
+    if (elements % sample_dimensions != 0) return MLDP_ERROR_CONFIG;
 
-    for (int i = 0; i < dimensions; i++) {
-        input_samples[i][sample_index] = sample[i];
+    int number_of_samples = elements / sample_dimensions;
+    for (int s_i = 0; s_i < number_of_samples; s_i++) {
+        for (int d_i = 0; d_i < sample_dimensions; d_i++) {
+            input_samples[d_i][sample_index + s_i] = samples[s_i * sample_dimensions + d_i];
+        }
+        sample_index++;
+        if (sample_index >= sample_length) {
+            sample_index = 0;
+        }
     }
-    sample_index++;
-    if (sample_index >= sample_length) {
-        sample_index = 0;
-    }
+
     return MLDP_SUCCESS;
 }
 
@@ -141,7 +146,7 @@ float* filterDataProcessor_getProcessedData() {
 MlDataProcessor_t mlDataProcessor = {
     .init = filterDataProcessor_init,
     .deinit = filterDataProcessor_deinit,
-    .recordAccData = filterDataProcessor_recordAccData,
+    .recordData = filterDataProcessor_recordData,
     .isDataReady = filterDataProcessor_isDataReady,
     .getProcessedData = filterDataProcessor_getProcessedData
 };

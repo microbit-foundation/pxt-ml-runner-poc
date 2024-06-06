@@ -37,7 +37,7 @@ namespace mlrunner {
 
     // Order is important for the outputData as set in:
     // https://github.com/microbit-foundation/ml-trainer/blob/v0.6.0/src/script/stores/mlStore.ts#L122-L131
-    static const MlDataFilters_t mlDataFilters[] = {
+    static const MlDataFilters_t mlTrainerDataFilters[] = {
         {1, filterMax},
         {1, filterMean},
         {1, filterMin},
@@ -47,7 +47,7 @@ namespace mlrunner {
         {1, filterZcr},
         {1, filterRms},
     };
-    static const int mlDataFiltersLen = sizeof(mlDataFilters) / sizeof(mlDataFilters[0]);
+    static const int mlTrainerDataFiltersLen = sizeof(mlTrainerDataFilters) / sizeof(mlTrainerDataFilters[0]);
 
     void runModel() {
         if (!initialised) return;
@@ -84,7 +84,7 @@ namespace mlrunner {
             uBit.accelerometer.getY() / 1000.0f,
             uBit.accelerometer.getZ() / 1000.0f,
         };
-        MldpReturn_t recordDataResult = mlDataProcessor.recordAccData(accData, 3);
+        MldpReturn_t recordDataResult = mlDataProcessor.recordData(accData, 3);
         if (recordDataResult != MLDP_SUCCESS) {
             DEBUG_PRINT("Failed to record accelerometer data\n");
             return;
@@ -106,11 +106,15 @@ namespace mlrunner {
 #if MICROBIT_CODAL != 1
         target_panic(PANIC_VARIANT_NOT_SUPPORTED);
 #endif
+
         if (initialised) return;
 
 #if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL != 0
-        DEBUG_PRINT("Using example model... ");
+        DEBUG_PRINT("Using example model (%d)...\n", DEVICE_MLRUNNER_USE_EXAMPLE_MODEL);
         void *model_address = (void *)example_model;
+        const MlDataFilters_t* mlDataFilters = example_mlDataFilters;
+        const int mlDataFiltersLen = example_mlDataFiltersLen;
+        const int expectedDimensions = (DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 2) ? 1 : 3;
 #else
         DEBUG_PRINT("Using embedded model...\n");
         if (model_str == NULL || model_str->length <= 0 || model_str->data == NULL) {
@@ -118,6 +122,9 @@ namespace mlrunner {
             uBit.panic(MlRunnerError::ErrorModelNotPresent);
         }
         void *model_address = (void *)model_str->data;
+        const MlDataFilters_t* mlDataFilters = mlTrainerDataFilters;
+        const int mlDataFiltersLen = mlTrainerDataFiltersLen;
+        const int expectedDimensions = 3;
 #endif
 
         const bool setModelSuccess = ml_setModel(model_address);
@@ -135,7 +142,7 @@ namespace mlrunner {
 
         const int sampleDimensions = ml_getSampleDimensions();
         DEBUG_PRINT("\tModel sample dimensions: %d\n", sampleDimensions);
-        if (sampleDimensions != 3) {
+        if (sampleDimensions != expectedDimensions) {
             DEBUG_PRINT("Model sample dimensions invalid\n");
             uBit.panic(MlRunnerError::ErrorSamplesDimension);
         }

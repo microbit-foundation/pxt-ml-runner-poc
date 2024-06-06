@@ -41,7 +41,7 @@ typedef struct {
 typedef struct {
     MldpReturn_t (*init)(const MlDataProcessorConfig_t *config);
     void (*deinit)(void);
-    MldpReturn_t (*recordAccData)(const float *sample, const int dimensions);
+    MldpReturn_t (*recordData)(const float *samples, const int elements);
     bool (*isDataReady)(void);
     float* (*getProcessedData)(void);
 } MlDataProcessor_t;

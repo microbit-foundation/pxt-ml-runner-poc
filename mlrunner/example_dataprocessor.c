@@ -8,11 +8,11 @@
  * TODO: Need to double buffer this so that a model can be run while the
  * next data is being collected.
  * TODO: Need to make isDataReady() more robust as right now it needs to be
- * called after each recordAccData() call.
+ * called after each recordData() call.
  */
 #include "mldataprocessor.h"
 
-#if DEVICE_MLRUNNER_USE_EXAMPLE_MODEL == 2
+#if DEVICE_MLRUNNER_USE_EXAMPLE_PROCESSOR > 0
 
 static float *accData = NULL;
 static int accDimensions = 0;
@@ -22,7 +22,7 @@ static int accDataIndex = 0;
 
 static MldpReturn_t exampleDataProcessor_init(const MlDataProcessorConfig_t* config);
 static void exampleDataProcessor_deinit();
-static MldpReturn_t exampleDataProcessor_recordAccData(const float *sample, const int sample_dimensions);
+static MldpReturn_t exampleDataProcessor_recordData(const float *sample, const int sample_dimensions);
 static bool exampleDataProcessor_isDataReady();
 static float* exampleDataProcessor_getProcessedData();
 
@@ -62,11 +62,11 @@ void exampleDataProcessor_deinit() {
     accDataIndex = 0;
 }
 
-MldpReturn_t exampleDataProcessor_recordAccData(const float* sample, const int dimensions) {
+MldpReturn_t exampleDataProcessor_recordData(const float* samples, const int elements) {
     if (accData == NULL) return false;
-    if (dimensions != accDimensions) return false;
+    if (elements != accDimensions) return false;
 
-    for (int i = 0; i < dimensions; i++) {
+    for (int i = 0; i < accDimensions; i++) {
         accData[accDataIndex++] = sample[i];
     }
     if (accDataIndex >= accDataSize) {
@@ -87,9 +87,9 @@ float* exampleDataProcessor_getProcessedData() {
 MlDataProcessor_t mlDataProcessor = {
     .init = exampleDataProcessor_init,
     .deinit = exampleDataProcessor_deinit,
-    .recordAccData = exampleDataProcessor_recordAccData,
+    .recordData = exampleDataProcessor_recordData,
     .isDataReady = exampleDataProcessor_isDataReady,
     .getProcessedData = exampleDataProcessor_getProcessedData,
 };
 
-#endif // DEVICE_MLRUNNER_USE_EXAMPLE_MODEL
+#endif // DEVICE_MLRUNNER_USE_EXAMPLE_PROCESSOR
