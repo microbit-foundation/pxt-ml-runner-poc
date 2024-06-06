@@ -10,6 +10,12 @@
  * from mlrunner/mlrunner.h. If the format is different this script will need
  * to be updated.
  *
+ * typedef struct ml_action_s {
+ *     const float threshold;
+ *     const uint8_t label_length;
+ *     const char label[0];
+ * } ml_action_t;
+ *
  * typedef struct ml_model_header_t {
  *     uint32_t magic0;
  *     uint16_t header_size;
@@ -17,12 +23,11 @@
  *     uint16_t samples_period;
  *     uint16_t samples_length;
  *     uint16_t sample_dimensions;
- *     uint8_t reserved[4];
- *     uint8_t number_of_labels;
- *     char labels[];
+ *     uint8_t reserved[6];
+ *     const uint8_t number_of_actions;
+ *     const ml_action_t actions[0];
  * } ml_model_header_t;
  */
-import { headerData } from './inputdata';
 import { MlModelHeader } from './MlModelHeader';
 
 const HEADER_MAGIC = 0x4D4F444C;
@@ -34,7 +39,12 @@ const CONST_SIZES = {
     samples_length: 2,
     sample_dimensions: 1,
     reserved: 6,
-    number_of_labels: 1,
+    number_of_actions: 1,
+};
+const ACTION_HEADER_SIZES = {
+    threshold: 4,
+    label_length: 1,
+    label: 1,       // This is a placeholder for the null terminator
 };
 
 /**
@@ -47,15 +57,25 @@ const CONST_SIZES = {
  * @returns The binary blob as an ArrayBuffer.
  */
 export function generateBlob(data: MlModelHeader): ArrayBuffer {
-    // Calculate the size of the labels part including null terminators
-    const labelsSize = data.labels.reduce((acc, label) => acc + label.length + 1, 0);
+    // Calculate size of the actions and labels within, including null terminators and padding
+    const fixedActionSize = Object.values(ACTION_HEADER_SIZES).reduce((acc, size) => acc + size, 0);
+    let structPadding = 0;
+    let actionsSize = data.actions.reduce((acc, action) => {
+        const actionStructSize = fixedActionSize + action.label.length;
+        // Each action struct is aligned to 4 bytes
+        structPadding = (actionStructSize % 4 === 0) ? 0 : 4 - (actionStructSize % 4);
+        return acc + actionStructSize + structPadding;
+    }, 0);
+    // The last padding is not needed
+    actionsSize -= structPadding;
 
-    // Header size  = fixed size values + size of all labels including null terminators
-    const fixedSize = Object.values(CONST_SIZES).reduce((acc, size) => acc + size, 0);
-    const headerSize = fixedSize + labelsSize;
+    // Header size  = fixed size values + size of all actions
+    const fixedHeaderSize = Object.values(CONST_SIZES).reduce((acc, size) => acc + size, 0);
+    const headerSize = fixedHeaderSize + actionsSize;
 
-    // The model offset is aligned to 4 bytes
-    const headerPadding = headerSize % 4 === 0 ? 0 : 4 - (headerSize % 4);
+    // The model offset is aligned to 4 bytes, as the actions are also aligned
+    // to 4 bytes, we can check the alignment is already satisfied
+    const headerPadding = (headerSize % 4 === 0) ? 0 : 4 - (headerSize % 4);
     const modelOffset = headerSize + headerPadding;
 
     const buffer = new ArrayBuffer(modelOffset);
@@ -74,14 +94,24 @@ export function generateBlob(data: MlModelHeader): ArrayBuffer {
         offset = addToView(view, offset, 0, 1);
     }
 
-    offset = addToView(view, offset, data.labels.length, CONST_SIZES.number_of_labels);
+    offset = addToView(view, offset, data.actions.length, CONST_SIZES.number_of_actions);
 
-    // Add labels as a null-terminated strings
-    data.labels.forEach(label => {
-        for (let i = 0; i < label.length; i++) {
-            offset = addToView(view, offset, label.charCodeAt(i), 1);
+    // Add action structures
+    data.actions.forEach(action => {
+        const start_offset = offset;
+        view.setFloat32(offset, action.threshold, true);
+        offset += ACTION_HEADER_SIZES.threshold;
+        offset = addToView(view, offset, action.label.length + 1, ACTION_HEADER_SIZES.label_length);
+        for (let i = 0; i < action.label.length; i++) {
+            offset = addToView(view, offset, action.label.charCodeAt(i), 1);
         }
         offset = addToView(view, offset, 0, 1); // null terminator
+        // Align to 4 bytes and pad with zeros
+        const actionStructSize = offset - start_offset;
+        const extraBytes = (actionStructSize % 4 === 0) ? 0 : 4 - (actionStructSize % 4);
+        for (let i = 0; i < extraBytes; i++) {
+            offset = addToView(view, offset, 0, 1);
+        }
     });
 
     return buffer;

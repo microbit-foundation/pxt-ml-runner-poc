@@ -9,5 +9,9 @@ export const headerData: MlModelHeader = {
     samples_period: 25,
     samples_length: 80,
     sample_dimensions: 3,
-    labels: ["Shake", "Still", "Circle"]
+    actions: [
+        { threshold: 0.8, label: "Shake" },
+        { threshold: 0.8, label: "Still" },
+        { threshold: 0.8, label: "Circle" }
+    ]
 };

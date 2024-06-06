@@ -23,16 +23,24 @@ extern "C" {
 // ASCII for "MODL"
 #define MODEL_HEADER_MAGIC0 0x4D4F444C
 
-typedef struct ml_model_header_t {
-    uint32_t magic0;
-    uint16_t header_size;      // Size of this header + all label strings
-    uint16_t model_offset;     // header_size + padding for 4-byte alignment
-    uint16_t samples_period;    // Period in ms between samples
-    uint16_t samples_length;   // Number of samples used per inference, not counting dimensions
-    uint8_t sample_dimensions; // Number of dimensions per sample, e.g. 3 for accelerometer data
-    uint8_t reserved[6];
-    uint8_t number_of_labels;  // Only 255 labels supported
-    char labels[];             // Mutiple null-terminated strings, as many as number_of_labels
+typedef struct __attribute__((packed)) ml_action_s {
+    const float threshold;              // Min threshold for this action to be active
+    const uint8_t label_length;         // Length of the label string including the null terminator
+    const char label[0];                // Null-terminated string for the label starts from this address
+} ml_action_t;
+const size_t ml_action_size_without_label = 5;
+
+typedef struct __attribute__((packed)) ml_model_header_s {
+    const uint32_t magic0;
+    const uint16_t header_size;         // Size of this header + all label strings
+    const uint16_t model_offset;        // header_size + padding for 4-byte alignment
+    const uint16_t samples_period;      // Period in ms between samples
+    const uint16_t samples_length;      // Number of samples used per inference, not counting dimensions
+    const uint8_t sample_dimensions;    // Number of dimensions per sample, e.g. 3 for accelerometer data
+    const uint8_t reserved[6];
+    const uint8_t number_of_actions;    // Only 255 actions supported
+    const ml_action_t actions[0];       // As many actions as number_of_actions, the size of each is variable
+                                        // Each action is 4-byte aligned and padded with zeros
 } ml_model_header_t;
 
 typedef struct ml_labels_s {

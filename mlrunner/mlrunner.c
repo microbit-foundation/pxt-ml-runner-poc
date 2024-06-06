@@ -19,10 +19,10 @@ static bool is_model_valid(void* model_address) {
     }
     // We should have at least one label, and samples period, length and dimensions
     if (
-        model_header->number_of_labels == 0 ||
         model_header->samples_period == 0 ||
         model_header->samples_length == 0 ||
-        model_header->sample_dimensions == 0
+        model_header->sample_dimensions == 0 ||
+        model_header->number_of_actions == 0
     ) {
         return false;
     }
@@ -112,36 +112,31 @@ ml_labels_t* ml_getLabels() {
     }
 
     // Workout the addresses in flash from each label, there are as many strings
-    // as indicated by model_header->number_of_labels, they start from address
-    // model_header->labels and are null-terminated.
-    uint32_t header_end = (uint32_t)model_header + model_header->header_size;
-    const char* flash_labels[model_header->number_of_labels];
-    flash_labels[0] = &model_header->labels[0];
-    for (int i = 1; i < model_header->number_of_labels; i++) {
-        // Find the end of the previous string by looking for the null terminator
-        flash_labels[i] = flash_labels[i - 1];
-        while (*flash_labels[i] != '\0' && (uint32_t)flash_labels[i] < header_end) {
-            flash_labels[i]++;
+    // as indicated by model_header->number_of_actions
+    const char* flash_labels[model_header->number_of_actions];
+    ml_action_t *action = (ml_action_t *)&model_header->actions[0];
+    for (int i = 0; i < model_header->number_of_actions; i++) {
+        flash_labels[i] = &action->label[0];
+        // Check the label has a single null terminator at the end
+        for (int j = 0; j < action->label_length - 1; j++) {
+            if (flash_labels[i][j] == '\0') {
+                return NULL;
+            }
         }
-        if ((uint32_t)flash_labels[i] >= header_end) {
-            // We reached the end of the header without finding the null terminator
-            free(flash_labels);
+        // And check the last character is a null terminator
+        if (flash_labels[i][action->label_length - 1] != '\0') {
             return NULL;
         }
-        // Currently pointing to the null terminator, so point to the following string
-        flash_labels[i]++;
-    }
-    // Check the last string is null terminated at the end of header
-    if (*(char *)(header_end - 1) != '\0') {
-        free(flash_labels);
-        return NULL;
+        action = (ml_action_t *)((uint32_t)action + ml_action_size_without_label + action->label_length);
+        // Next action address is 4 byte aligned
+        action = (ml_action_t *)(((uint32_t)action + 3) & ~3);
     }
 
     // First check if the labels are the same, if not we need to set them again
     bool set_labels = false;
     if (labels.num_labels == 0 || labels.labels == NULL) {
         set_labels = true;
-    } else if (labels.num_labels != model_header->number_of_labels) {
+    } else if (labels.num_labels != model_header->number_of_actions) {
         set_labels = true;
     } else {
         for (size_t i = 0; i < labels.num_labels; i++) {
@@ -158,11 +153,11 @@ ml_labels_t* ml_getLabels() {
             free(labels.labels);
         }
         // Then set them to point to the strings in flash
-        labels.labels = (const char **)malloc(model_header->number_of_labels * sizeof(char *));
+        labels.labels = (const char **)malloc(model_header->number_of_actions * sizeof(char *));
         if (labels.labels == NULL) {
             return NULL;
         }
-        labels.num_labels = model_header->number_of_labels;
+        labels.num_labels = model_header->number_of_actions;
         for (size_t i = 0; i < labels.num_labels; i++) {
             labels.labels[i] = flash_labels[i];
         }

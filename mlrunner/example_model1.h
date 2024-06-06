@@ -33,32 +33,32 @@ static const int example_mlDataFiltersLen = sizeof(example_mlDataFilters) / size
 #include <mlrunner.h>
 const ml_model_header_t ml4f_model_example_header = {
     .magic0 = MODEL_HEADER_MAGIC0,
-    .header_size = 0x27,        // 39
-    .model_offset = 0x28,       // 40
+    .header_size = 0x38,        // 56
+    .model_offset = 0x38,       // 56
     .samples_period = 0x19,     // 25
     .samples_length = 0x50,     // 80
     .sample_dimensions = 0x03,  // 3
     .reserved = { 0x00, 0x00, 0x00, 0x00 },
-    .number_of_labels = 0x03,
-    // 19 bytes + 1 extra null terminators at the end
-    .labels = {
-        "Shake\0"
-        "Still\0"
-        "Circle\0"
+    .number_of_actions = 0x03,
+    .actions = {
+        {0.8, 8, "Shake" },   // 1 bytes padding
+        {0.8, 8, "Still" },   // 1 bytes padding
+        {0.8, 8, "Circle" },  // 0 bytes padding
     }
 };
 */
 
 // Sizes in number of elements
-#define ml4f_model_example_header_len   10
+#define ml4f_model_example_header_len   14
 #define ml4f_model_example_size         860
 #define ml4f_full_model_size            (ml4f_model_example_header_len + ml4f_model_example_size)
 
 const unsigned int example_model[ml4f_full_model_size] = {
     // Manually converted ml4f_model_example_header
-    0x4D4F444C, 0x00280027, 0x00500019, 0x00000003,
-    0x03000000, 0x6B616853, 0x74530065, 0x006C6C69,
-    0x63726943, 0x0000656C,
+    0x4D4F444C, 0x00380038, 0x00500019, 0x00000003,
+    0x03000000, 0x3F4CCCCD, 0x61685306, 0x0000656B,
+    0x3F4CCCCD, 0x69745306, 0x00006C6C, 0x3F4CCCCD,
+    0x72694307, 0x00656C63,
 
     // ML4F model
     0x30470f62, 0x46344c4d, 0x00000050, 0x00000d70, 0x000005a4, 0x00000000, 0x00000000, 0x000000a8, 
