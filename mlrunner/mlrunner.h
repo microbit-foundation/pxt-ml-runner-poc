@@ -8,7 +8,7 @@
  * @details
  * The ML4F model has its own header, but does not include the labels.
  * So an extra header with the labels and other information is added on top.
- * This header beginning and end is 4-byte aligned, with padding zeros at the
+ * This header start and end are 4-byte aligned, with padding zeros at the
  * end if needed, so that the ML4F model is placed directly after it.
  * We call the "full model" the custom header + the ML4F model.
  */
@@ -25,13 +25,22 @@ extern "C" {
 // ASCII for "MODL"
 #define MODEL_HEADER_MAGIC0 0x4D4F444C
 
-typedef struct __attribute__((packed)) ml_action_s {
+/**
+ * The ML header contains a series of actions, each with a threshold and label.
+ * The label is of variable length, and inside the header these instances are
+ * padded to end with 4-byte alignment.
+ */
+typedef struct __attribute__((packed)) ml_header_action_s {
     const float threshold;              // Min threshold for this action to be active
     const uint8_t label_length;         // Length of the label string including the null terminator
-    const char label[0];                // Null-terminated string for the label starts from this address
-} ml_action_t;
+    const char label[];                 // Null-terminated string for the label starts from this address
+} ml_header_action_t;
 const size_t ml_action_size_without_label = 5;
 
+/**
+ * The ML model header presence can be checked via the magic number.
+ * The actions are padded with zeros for 4-byte alignment.
+ */
 typedef struct __attribute__((packed, aligned(4))) ml_model_header_s {
     const uint32_t magic0;
     const uint16_t header_size;         // Size of this header including all actions, padded to 4 bytes
@@ -40,9 +49,18 @@ typedef struct __attribute__((packed, aligned(4))) ml_model_header_s {
     const uint8_t sample_dimensions;    // Number of dimensions per sample, e.g. 3 for accelerometer data
     const uint8_t reserved[8];
     const uint8_t number_of_actions;    // Only 255 actions supported
-    const ml_action_t actions[0];       // As many actions as number_of_actions, the size of each is variable
-                                        // Each action is 4-byte aligned, and padded zeros at the end if needed
+    const ml_header_action_t actions[]; // As many actions as number_of_actions, the size of each is variable
 } ml_model_header_t;
+
+typedef struct ml_action_s {
+    float threshold;
+    const char *label;
+} ml_action_t;
+
+typedef struct ml_actions_s {
+    size_t len;
+    ml_action_t action[];
+} ml_actions_t;
 
 typedef struct ml_labels_s {
     size_t num_labels;
@@ -111,6 +129,29 @@ int ml_getInputLength();
  * @return A pointer to a ml_labels_t object containing the labels.
  */
 ml_labels_t* ml_getLabels();
+
+/**
+ * @brief Allocate memory for the model actions.
+ *
+ * The caller is responsible for freeing the memory.
+ *
+ * @return A pointer to a ml_actions_t object to store the actions.
+ */
+ml_actions_t* ml_allocateActions(); 
+
+/**
+ * @brief Get the model actions.
+ *
+ * The actions_out->action[].label pointers point directly to the strings
+ * stored in flash.
+ *
+ * @param actions_out A pointer to a ml_actions_t object to store the actions.
+ * @return Success state, true if the actions were successfully retrieved,
+ *         false otherwise.
+ *         If false is returned, the actions_out is partially filled and it
+ *         should not be used.
+ */
+bool ml_getActions(ml_actions_t *actions_out);
 
 /**
  * @brief Run the model inference and return the output predictions.

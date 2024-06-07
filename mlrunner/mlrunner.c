@@ -95,6 +95,7 @@ int ml_getInputLength() {
     return ml4f_shape_elements(ml4f_input_shape(ml4f_model));
 }
 
+// TODO: Remove this function and use ml_getLabels instead
 ml_labels_t* ml_getLabels() {
     static ml_labels_t labels = {
         .num_labels = 0,
@@ -114,7 +115,7 @@ ml_labels_t* ml_getLabels() {
     // Workout the addresses in flash from each label, there are as many strings
     // as indicated by model_header->number_of_actions
     const char* flash_labels[model_header->number_of_actions];
-    ml_action_t *action = (ml_action_t *)&model_header->actions[0];
+    ml_header_action_t *action = (ml_header_action_t *)&model_header->actions[0];
     for (int i = 0; i < model_header->number_of_actions; i++) {
         flash_labels[i] = &action->label[0];
         // Check the label has a single null terminator at the end
@@ -127,9 +128,9 @@ ml_labels_t* ml_getLabels() {
         if (flash_labels[i][action->label_length - 1] != '\0') {
             return NULL;
         }
-        action = (ml_action_t *)((uint32_t)action + ml_action_size_without_label + action->label_length);
+        action = (ml_header_action_t *)((uint32_t)action + ml_action_size_without_label + action->label_length);
         // Next action address is 4 byte aligned
-        action = (ml_action_t *)(((uint32_t)action + 3) & ~3);
+        action = (ml_header_action_t *)(((uint32_t)action + 3) & ~3);
     }
 
     // First check if the labels are the same, if not we need to set them again
@@ -164,6 +165,58 @@ ml_labels_t* ml_getLabels() {
     }
 
     return &labels;
+}
+
+ml_actions_t* ml_allocateActions() {
+    const ml_model_header_t* const model_header = (ml_model_header_t*)MODEL_ADDRESS;
+    if (model_header == NULL) {
+        return NULL;
+    }
+
+    ml_actions_t *actions = (ml_actions_t *)malloc(
+            sizeof(ml_actions_t) + sizeof(ml_action_t) * model_header->number_of_actions);
+    if (actions == NULL) {
+        return NULL;
+    }
+    actions->len = model_header->number_of_actions;
+    return actions;
+}
+
+bool ml_getActions(ml_actions_t *actions_out) {
+    const ml_model_header_t* const model_header = (ml_model_header_t*)MODEL_ADDRESS;
+    if (model_header == NULL || actions_out == NULL) {
+        return false;
+    }
+
+    // Check we have enough space to copy the actions
+    if (actions_out->len < model_header->number_of_actions) {
+        return false;
+    }
+
+    // Iterate through the actions on the header, copy the threshold and add a
+    // pointer to the label stored in flash
+    ml_header_action_t *action = (ml_header_action_t *)&model_header->actions[0];
+    for (int i = 0; i < model_header->number_of_actions; i++) {
+        // Check the label doesn't have any null terminators before the end
+        for (int j = 0; j < action->label_length - 1; j++) {
+            if (action->label[j] == '\0') {
+                return false;
+            }
+        }
+        // And confirm the last character is a null terminator
+        if (action->label[action->label_length - 1] != '\0') {
+            return false;
+        }
+
+        actions_out->action[i].label = &action->label[0];
+        actions_out->action[i].threshold = action->threshold;
+
+        // Locate the next action in flash, which is 4 byte aligned
+        action = (ml_header_action_t *)((uint32_t)action + ml_action_size_without_label + action->label_length);
+        action = (ml_header_action_t *)(((uint32_t)action + 3) & ~3);
+    }
+
+    return true;
 }
 
 ml_prediction_t* ml_predict(const float *input) {

@@ -28,7 +28,6 @@ namespace testrunner {
      *
      * @param modelBlob The model blob to initialize the ML model with.
      */
-    //% blockId=testrunner_init
     //% shim=testrunner::init
     function initRunner(modelBlob: Buffer): void {
         return;

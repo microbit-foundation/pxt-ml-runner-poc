@@ -14,7 +14,7 @@
  *     const float threshold;
  *     const uint8_t label_length;
  *     const char label[0];
- * } ml_action_t;
+ * } ml_header_action_t;
  *
  * typedef struct ml_model_header_t {
  *     uint32_t magic0;
@@ -24,7 +24,7 @@
  *     uint16_t sample_dimensions;
  *     uint8_t reserved[8];
  *     const uint8_t number_of_actions;
- *     const ml_action_t actions[0];
+ *     const ml_header_action_t actions[0];
  * } ml_model_header_t;
  */
 import { MlModelHeader } from './MlModelHeader';

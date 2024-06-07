@@ -10,7 +10,7 @@
 
 // Enable/disable debug print to serial, can be set in pxt.json
 #ifndef ML_DEBUG_PRINT
-#define ML_DEBUG_PRINT 0
+#define ML_DEBUG_PRINT 1
 #endif
 #if ML_DEBUG_PRINT
 #define DEBUG_PRINT(...) uBit.serial.printf(__VA_ARGS__)
@@ -42,12 +42,12 @@ namespace testrunner {
         float *modelData = mlDataProcessor.getProcessedData();
         if (modelData == NULL) {
             DEBUG_PRINT("Failed to processed data for the model\n");
-            uBit.panic(TEST_RUNNER_ERROR + 8);
+            uBit.panic(TEST_RUNNER_ERROR + 10);
         }
         ml_prediction_t* predictions = ml_predict(modelData);
         if (predictions == NULL) {
             DEBUG_PRINT("Failed to run model\n");
-            uBit.panic(TEST_RUNNER_ERROR + 7);
+            uBit.panic(TEST_RUNNER_ERROR + 11);
         }
 
         DEBUG_PRINT("Max prediction: %d %s\nPredictions: ",
@@ -88,7 +88,7 @@ namespace testrunner {
     /*************************************************************************/
     /* Exported functions                                                    */
     /*************************************************************************/
-    //% blockId=testrunner_init
+    //%
     void init(Buffer model_str) {
 #if MICROBIT_CODAL != 1
         target_panic(PANIC_VARIANT_NOT_SUPPORTED);
@@ -117,35 +117,50 @@ namespace testrunner {
         const bool setModelSuccess = ml_setModel(model_address);
         if (!setModelSuccess) {
             DEBUG_PRINT("Model magic invalid\n");
-            uBit.panic(TEST_RUNNER_ERROR + 1);
+            uBit.panic(TEST_RUNNER_ERROR + 2);
         }
 
         const int samplesLen = ml_getSamplesLength();
         DEBUG_PRINT("\tModel samples length: %d\n", samplesLen);
         if (samplesLen <= 0) {
             DEBUG_PRINT("Model samples length invalid\n");
-            uBit.panic(TEST_RUNNER_ERROR + 2);
+            uBit.panic(TEST_RUNNER_ERROR + 3);
         }
 
         const int sampleDimensions = ml_getSampleDimensions();
         DEBUG_PRINT("\tModel sample dimensions: %d\n", sampleDimensions);
         if (sampleDimensions != expectedDimensions) {
             DEBUG_PRINT("Model sample dimensions invalid\n");
-            uBit.panic(TEST_RUNNER_ERROR + 3);
+            uBit.panic(TEST_RUNNER_ERROR + 4);
         }
 
         const int samplesPeriodMillisec = ml_getSamplesPeriod();
         DEBUG_PRINT("\tModel samples period: %d ms\n", samplesPeriodMillisec);
         if (samplesPeriodMillisec <= 0) {
             DEBUG_PRINT("Model samples period invalid\n");
-            uBit.panic(TEST_RUNNER_ERROR + 4);
+            uBit.panic(TEST_RUNNER_ERROR + 5);
         }
 
         const int modelInputLen = ml_getInputLength();
         DEBUG_PRINT("\tModel input length: %d\n", modelInputLen);
         if (modelInputLen <= 0) {
             DEBUG_PRINT("Model input length invalid\n");
-            uBit.panic(TEST_RUNNER_ERROR + 5);
+            uBit.panic(TEST_RUNNER_ERROR + 6);
+        }
+
+        ml_actions_t *actions = ml_allocateActions();
+        if (actions == NULL) {
+            DEBUG_PRINT("Failed to allocate memory for actions\n");
+            uBit.panic(TEST_RUNNER_ERROR + 7);
+        }
+        const bool setActionsSuccess = ml_getActions(actions);
+        if (!setActionsSuccess) {
+            DEBUG_PRINT("Failed to retrieve actions\n");
+            uBit.panic(TEST_RUNNER_ERROR + 8);
+        }
+        DEBUG_PRINT("\tActions:\n");
+        for (size_t i = 0; i < actions->len; i++) {
+            DEBUG_PRINT("\t\tAction '%s' threshold: %d\n", actions->action[i].label, (int)(actions->action[i].threshold * 100));
         }
 
         const MlDataProcessorConfig_t mlDataConfig = {
@@ -159,7 +174,7 @@ namespace testrunner {
         if (mlInitResult != MLDP_SUCCESS) {
             DEBUG_PRINT("Failed to initialise ML data processor (%d)\n", mlInitResult);
             // TODO: Check error type and set panic value accordingly
-            uBit.panic(TEST_RUNNER_ERROR + 6);
+            uBit.panic(TEST_RUNNER_ERROR + 8);
         }
 
         // Set up background timer to collect data and run model
