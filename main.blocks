@@ -1,0 +1,42 @@
+<xml
+	xmlns="https://developers.google.com/blockly/xml">
+	<block type="device_button_event" x="0" y="0">
+		<field name="NAME">Button.A</field>
+		<statement name="HANDLER">
+			<block type="device_clear_display"></block>
+		</statement>
+	</block>
+	<block type="device_forever" x="619" y="0"></block>
+	<block type="testrunner_on_ml_event" x="0" y="352">
+		<field name="value">TestRunnerLabels.Shake</field>
+		<statement name="HANDLER">
+			<block type="device_print_message">
+				<value name="text">
+					<shadow type="text">
+						<field name="TEXT">S</field>
+					</shadow>
+				</value>
+			</block>
+		</statement>
+	</block>
+	<block type="testrunner_on_ml_event" x="259" y="352">
+		<field name="value">TestRunnerLabels.Still</field>
+		<statement name="HANDLER">
+			<block type="basic_show_icon">
+				<field name="i">IconNames.Asleep</field>
+			</block>
+		</statement>
+	</block>
+	<block type="testrunner_on_ml_event" x="517" y="352">
+		<field name="value">TestRunnerLabels.Circle</field>
+		<statement name="HANDLER">
+			<block type="device_print_message">
+				<value name="text">
+					<shadow type="text">
+						<field name="TEXT">C</field>
+					</shadow>
+				</value>
+			</block>
+		</statement>
+	</block>
+</xml>

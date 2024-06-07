@@ -1,6 +1,6 @@
 // This file is meant to be replaced by the MakeCode extension,
 // but in the meantime, it contains a usable example model and labels
-enum MlRunnerLabels {
+enum TestRunnerLabels {
     //% block="Shake"
     Shake = 1,
     //% block="Still"

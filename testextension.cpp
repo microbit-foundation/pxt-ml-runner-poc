@@ -3,25 +3,10 @@
 #include "mlrunner/mldataprocessor.h"
 #include "mlrunner/example_model1.h"
 
-enum MlRunnerIds {
-    MlRunnerInference = 71,
-    MlRunnerTimer = 72,
-};
-
-enum MlRunnerError {
-    ErrorModelNotPresent = 800,
-    ErrorSamplesLength,
-    ErrorSamplesDimension,
-    ErrorSamplesPeriod,
-    ErrorInputLength,
-    ErrorMemAlloc,
-    ErrorModelInference,
-    ErrorDataProcessing,
-};
-
-static bool initialised = false;
-
-static const uint16_t ML_CODAL_TIMER_VALUE = 1;
+// Using defines to avoid MakeCode exposing the enum to enums.d.ts
+#define TEST_RUNNER_ID_INFERENCE 71
+#define TEST_RUNNER_ID_TIMER 72
+#define TEST_RUNNER_ERROR 800
 
 // Enable/disable debug print to serial, can be set in pxt.json
 #ifndef ML_DEBUG_PRINT
@@ -33,7 +18,9 @@ static const uint16_t ML_CODAL_TIMER_VALUE = 1;
 #define DEBUG_PRINT(...)
 #endif
 
-namespace mlrunner {
+namespace testrunner {
+    static bool initialised = false;
+    static const uint16_t ML_CODAL_TIMER_VALUE = 1;
 
     // Order is important for the outputData as set in:
     // https://github.com/microbit-foundation/ml-trainer/blob/v0.6.0/src/script/stores/mlStore.ts#L122-L131
@@ -55,12 +42,12 @@ namespace mlrunner {
         float *modelData = mlDataProcessor.getProcessedData();
         if (modelData == NULL) {
             DEBUG_PRINT("Failed to processed data for the model\n");
-            uBit.panic(MlRunnerError::ErrorDataProcessing);
+            uBit.panic(TEST_RUNNER_ERROR + 8);
         }
         ml_prediction_t* predictions = ml_predict(modelData);
         if (predictions == NULL) {
             DEBUG_PRINT("Failed to run model\n");
-            uBit.panic(MlRunnerError::ErrorModelInference);
+            uBit.panic(TEST_RUNNER_ERROR + 7);
         }
 
         DEBUG_PRINT("Max prediction: %d %s\nPredictions: ",
@@ -73,7 +60,7 @@ namespace mlrunner {
         }
         DEBUG_PRINT("\n\n");
 
-        MicroBitEvent evt(MlRunnerIds::MlRunnerInference, predictions->max_index + 1);
+        MicroBitEvent evt(TEST_RUNNER_ID_INFERENCE, predictions->max_index + 1);
     }
 
     void recordAccData(MicroBitEvent) {
@@ -92,16 +79,16 @@ namespace mlrunner {
 
         if (mlDataProcessor.isDataReady()) {
             // Stop firing timer events while running model and resume after
-            uBit.messageBus.ignore(MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE, &recordAccData);
+            uBit.messageBus.ignore(TEST_RUNNER_ID_TIMER, ML_CODAL_TIMER_VALUE, &recordAccData);
             runModel();
-            uBit.messageBus.listen(MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE, &recordAccData, MESSAGE_BUS_LISTENER_DROP_IF_BUSY);
+            uBit.messageBus.listen(TEST_RUNNER_ID_TIMER, ML_CODAL_TIMER_VALUE, &recordAccData, MESSAGE_BUS_LISTENER_DROP_IF_BUSY);
         }
     }
 
     /*************************************************************************/
     /* Exported functions                                                    */
     /*************************************************************************/
-    //% blockId=mlrunner_init
+    //% blockId=testrunner_init
     void init(Buffer model_str) {
 #if MICROBIT_CODAL != 1
         target_panic(PANIC_VARIANT_NOT_SUPPORTED);
@@ -119,7 +106,7 @@ namespace mlrunner {
         DEBUG_PRINT("Using embedded model...\n");
         if (model_str == NULL || model_str->length <= 0 || model_str->data == NULL) {
             DEBUG_PRINT("Model string not present\n");
-            uBit.panic(MlRunnerError::ErrorModelNotPresent);
+            uBit.panic(TEST_RUNNER_ERROR + 1);
         }
         void *model_address = (void *)model_str->data;
         const MlDataFilters_t* mlDataFilters = mlTrainerDataFilters;
@@ -130,35 +117,35 @@ namespace mlrunner {
         const bool setModelSuccess = ml_setModel(model_address);
         if (!setModelSuccess) {
             DEBUG_PRINT("Model magic invalid\n");
-            uBit.panic(MlRunnerError::ErrorModelNotPresent);
+            uBit.panic(TEST_RUNNER_ERROR + 1);
         }
 
         const int samplesLen = ml_getSamplesLength();
         DEBUG_PRINT("\tModel samples length: %d\n", samplesLen);
         if (samplesLen <= 0) {
             DEBUG_PRINT("Model samples length invalid\n");
-            uBit.panic(MlRunnerError::ErrorSamplesLength);
+            uBit.panic(TEST_RUNNER_ERROR + 2);
         }
 
         const int sampleDimensions = ml_getSampleDimensions();
         DEBUG_PRINT("\tModel sample dimensions: %d\n", sampleDimensions);
         if (sampleDimensions != expectedDimensions) {
             DEBUG_PRINT("Model sample dimensions invalid\n");
-            uBit.panic(MlRunnerError::ErrorSamplesDimension);
+            uBit.panic(TEST_RUNNER_ERROR + 3);
         }
 
         const int samplesPeriodMillisec = ml_getSamplesPeriod();
         DEBUG_PRINT("\tModel samples period: %d ms\n", samplesPeriodMillisec);
         if (samplesPeriodMillisec <= 0) {
             DEBUG_PRINT("Model samples period invalid\n");
-            uBit.panic(MlRunnerError::ErrorSamplesPeriod);
+            uBit.panic(TEST_RUNNER_ERROR + 4);
         }
 
         const int modelInputLen = ml_getInputLength();
         DEBUG_PRINT("\tModel input length: %d\n", modelInputLen);
         if (modelInputLen <= 0) {
             DEBUG_PRINT("Model input length invalid\n");
-            uBit.panic(MlRunnerError::ErrorInputLength);
+            uBit.panic(TEST_RUNNER_ERROR + 5);
         }
 
         const MlDataProcessorConfig_t mlDataConfig = {
@@ -172,42 +159,15 @@ namespace mlrunner {
         if (mlInitResult != MLDP_SUCCESS) {
             DEBUG_PRINT("Failed to initialise ML data processor (%d)\n", mlInitResult);
             // TODO: Check error type and set panic value accordingly
-            uBit.panic(MlRunnerError::ErrorMemAlloc);
+            uBit.panic(TEST_RUNNER_ERROR + 6);
         }
 
         // Set up background timer to collect data and run model
-        uBit.messageBus.listen(MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE, &recordAccData, MESSAGE_BUS_LISTENER_DROP_IF_BUSY);
-        uBit.timer.eventEvery(samplesPeriodMillisec, MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE);
+        uBit.messageBus.listen(TEST_RUNNER_ID_TIMER, ML_CODAL_TIMER_VALUE, &recordAccData, MESSAGE_BUS_LISTENER_DROP_IF_BUSY);
+        uBit.timer.eventEvery(samplesPeriodMillisec, TEST_RUNNER_ID_TIMER, ML_CODAL_TIMER_VALUE);
 
         initialised = true;
 
         DEBUG_PRINT("\tModel loaded\n");
-    }
-
-    //% blockId=mlrunner_stop_model_running
-    void deinit() {
-#if MICROBIT_CODAL != 1
-        target_panic(PANIC_VARIANT_NOT_SUPPORTED);
-#endif
-        if (!initialised) {
-            DEBUG_PRINT("Attempting to stop running ML, but was already stopped.\n");
-            return;
-        }
-        DEBUG_PRINT("Stop running the ML model... ");
-
-        // Stop timer event
-        uBit.messageBus.ignore(MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE, &recordAccData);
-        uBit.timer.cancel(MlRunnerIds::MlRunnerTimer, ML_CODAL_TIMER_VALUE);
-
-        // Clean up
-        mlDataProcessor.deinit();
-        initialised = false;
-
-        DEBUG_PRINT("Done\n\n");
-    }
-
-    //% blockId=mlrunner_is_running
-    bool isModelRunning() {
-        return initialised;
     }
 }
