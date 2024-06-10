@@ -44,23 +44,36 @@ namespace testrunner {
             DEBUG_PRINT("Failed to processed data for the model\n");
             uBit.panic(TEST_RUNNER_ERROR + 10);
         }
-        ml_prediction_t* predictions = ml_predict(modelData);
-        if (predictions == NULL) {
+        ml_predictions_t *predictions = ml_allocatePredictions();
+        bool success = ml_predict(modelData, predictions);
+        if (!success) {
             DEBUG_PRINT("Failed to run model\n");
             uBit.panic(TEST_RUNNER_ERROR + 11);
         }
 
-        DEBUG_PRINT("Max prediction: %d %s\nPredictions: ",
+        DEBUG_PRINT("Prediction:\n");
+        DEBUG_PRINT("\tMax overall: %d %s\n",
                     predictions->max_index,
-                    predictions->labels[predictions->max_index]);
-        for (size_t i = 0; i < predictions->num_labels; i++) {
-            DEBUG_PRINT(" %s[%d]",
-                        predictions->labels[i],
-                        (int)(predictions->predictions[i] * 100));
+                    predictions->prediction[predictions->max_index].action.label);
+        if (predictions->prediction_index >= 0) {
+            DEBUG_PRINT("\tMax above threshold: %d %s\n",
+                        predictions->prediction_index,
+                        predictions->prediction[predictions->prediction_index].action.label);
+        } else {
+            DEBUG_PRINT("\tMax above threshold: None\n");
+        }
+        DEBUG_PRINT("\tLabel[predicted][threshold]: ");
+        for (size_t i = 0; i < predictions->len; i++) {
+            DEBUG_PRINT(" %s[%d][%d]",
+                        predictions->prediction[i].action.label,
+                        (int)(predictions->prediction[i].prediction * 100),
+                        (int)(predictions->prediction[i].action.threshold * 100));
         }
         DEBUG_PRINT("\n\n");
 
-        MicroBitEvent evt(TEST_RUNNER_ID_INFERENCE, predictions->max_index + 1);
+        MicroBitEvent evt(TEST_RUNNER_ID_INFERENCE, predictions->prediction_index + 2);
+
+        free(predictions);
     }
 
     void recordAccData(MicroBitEvent) {
@@ -153,8 +166,8 @@ namespace testrunner {
             DEBUG_PRINT("Failed to allocate memory for actions\n");
             uBit.panic(TEST_RUNNER_ERROR + 7);
         }
-        const bool setActionsSuccess = ml_getActions(actions);
-        if (!setActionsSuccess) {
+        const bool getActionsSuccess = ml_getActions(actions);
+        if (!getActionsSuccess) {
             DEBUG_PRINT("Failed to retrieve actions\n");
             uBit.panic(TEST_RUNNER_ERROR + 8);
         }
@@ -162,6 +175,7 @@ namespace testrunner {
         for (size_t i = 0; i < actions->len; i++) {
             DEBUG_PRINT("\t\tAction '%s' threshold: %d\n", actions->action[i].label, (int)(actions->action[i].threshold * 100));
         }
+        free(actions);
 
         const MlDataProcessorConfig_t mlDataConfig = {
             .samples = samplesLen,

@@ -68,11 +68,16 @@ typedef struct ml_labels_s {
 } ml_labels_t;
 
 typedef struct ml_prediction_s {
-    size_t max_index;
-    size_t num_labels;
-    const char **labels;
-    float *predictions;
+    ml_action_t action;
+    float prediction;
 } ml_prediction_t;
+
+typedef struct ml_predictions_s {
+    int max_index;
+    int prediction_index;
+    size_t len;
+    ml_prediction_t prediction[];
+} ml_predictions_t;
 
 /**
  * @brief Set the model to use for inference.
@@ -137,7 +142,7 @@ ml_labels_t* ml_getLabels();
  *
  * @return A pointer to a ml_actions_t object to store the actions.
  */
-ml_actions_t* ml_allocateActions(); 
+ml_actions_t* ml_allocateActions();
 
 /**
  * @brief Get the model actions.
@@ -154,12 +159,21 @@ ml_actions_t* ml_allocateActions();
 bool ml_getActions(ml_actions_t *actions_out);
 
 /**
+ * @brief Allocate memory for the model predictions.
+ *
+ * The caller is responsible for freeing the memory.
+ *
+ * @return A pointer to a ml_predictions_t object to store the predictions.
+ */
+ml_predictions_t* ml_allocatePredictions();
+
+/**
  * @brief Run the model inference and return the output predictions.
  *
  * @param input The input data for the model.
  * @return A pointer to a ml_prediction_t object containing the predictions.
  */
-ml_prediction_t* ml_predict(const float *input);
+bool ml_predict(const float *input, ml_predictions_t *predictions_out);
 
 #ifdef __cplusplus
 }  // extern "C"

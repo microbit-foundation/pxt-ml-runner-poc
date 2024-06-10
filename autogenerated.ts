@@ -1,12 +1,14 @@
 // This file is meant to be replaced by the MakeCode extension,
 // but in the meantime, it contains a usable example model and labels
 enum TestRunnerLabels {
+    //% block="None"
+    None = 1,
     //% block="Shake"
-    Shake = 1,
+    Shake = 2,
     //% block="Still"
-    Still = 2,
+    Still = 3,
     //% block="Circle"
-    Circle = 3,
+    Circle = 4,
 };
 
 function getModelBlob(): Buffer {

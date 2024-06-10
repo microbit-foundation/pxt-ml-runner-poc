@@ -187,9 +187,7 @@ bool ml_getActions(ml_actions_t *actions_out) {
     if (model_header == NULL || actions_out == NULL) {
         return false;
     }
-
-    // Check we have enough space to copy the actions
-    if (actions_out->len < model_header->number_of_actions) {
+    if (actions_out->len != model_header->number_of_actions) {
         return false;
     }
 
@@ -219,41 +217,73 @@ bool ml_getActions(ml_actions_t *actions_out) {
     return true;
 }
 
-ml_prediction_t* ml_predict(const float *input) {
-    static ml_prediction_t predictions = {
-        .max_index = 0,
-        .num_labels = 0,
-        .labels = NULL,
-        .predictions = NULL,
-    };
-
-    ml_labels_t* labels = ml_getLabels();
-    if (labels == NULL) {
+ml_predictions_t* ml_allocatePredictions() {
+    const ml_model_header_t* const model_header = (ml_model_header_t*)MODEL_ADDRESS;
+    if (model_header == NULL) {
         return NULL;
     }
 
-    // Check if we need to resize the predictions array
-    if (predictions.num_labels != labels->num_labels) {
-        if (predictions.predictions != NULL) {
-            free(predictions.predictions);
-        }
-        predictions.num_labels = labels->num_labels;
-        predictions.predictions = (float *)malloc(predictions.num_labels * sizeof(float));
-        if (predictions.predictions == NULL) {
-            predictions.num_labels = 0;
-            return NULL;
-        }
+    ml_predictions_t *predictions = (ml_predictions_t *)malloc(
+            sizeof(ml_predictions_t) + sizeof(ml_prediction_t) * model_header->number_of_actions);
+    if (predictions == NULL) {
+        return NULL;
     }
-    // Always update the labels in case they changed
-    predictions.labels = labels->labels;
+    predictions->len = model_header->number_of_actions;
+    return predictions;
 
-    ml4f_header_t* ml4f_model = get_ml4f_model();
-    int r = ml4f_full_invoke(ml4f_model, input, predictions.predictions);
+}
+
+bool ml_predict(const float *input, ml_predictions_t *predictions_out) {
+    // Assuming the model is the same address we can cache the actions
+    static ml_actions_t *actions = NULL;
+    static ml4f_header_t *ml4f_model = NULL;
+
+    if (actions == NULL) {
+        free(actions);
+        actions = ml_allocateActions();
+        if (actions == NULL) return false;
+        const bool getActionsSuccess = ml_getActions(actions);
+        if (!getActionsSuccess) return false;
+
+        ml4f_model = get_ml4f_model();
+    }
+    if (ml4f_model == NULL) {
+        free(actions);
+        actions = NULL;
+        return false;
+    }
+
+    // Check the output predictions size is correct
+    if (predictions_out->len != actions->len) {
+        return false;
+    }
+
+    // Run the model inference and obtain the predictions
+    float ml4f_output[predictions_out->len];
+    int r = ml4f_full_invoke(ml4f_model, input, ml4f_output);
     if (r != 0) {
         return NULL;
     }
 
-    predictions.max_index = ml4f_argmax(predictions.predictions, predictions.num_labels);
+    // Populate output predictions
+    float output_above_threshold[predictions_out->len];
+    for (size_t i = 0; i < predictions_out->len; i++) {
+        predictions_out->prediction[i].action.threshold = actions->action[i].threshold;
+        predictions_out->prediction[i].action.label = actions->action[i].label;
+        predictions_out->prediction[i].prediction = ml4f_output[i];
+        if (ml4f_output[i] >= actions->action[i].threshold) {
+            output_above_threshold[i] = ml4f_output[i];
+        } else {
+            output_above_threshold[i] = 0.0f;
+        }
+    }
+    predictions_out->max_index = ml4f_argmax(ml4f_output, predictions_out->len);
+    predictions_out->prediction_index = ml4f_argmax(output_above_threshold, predictions_out->len);
 
-    return &predictions;
+    // If the prediction_index prediction is 0.0, then none of the predictions were above the threshold
+    if (output_above_threshold[predictions_out->prediction_index] == 0.0f) {
+        predictions_out->prediction_index = -1;
+    }
+
+    return true;
 }
