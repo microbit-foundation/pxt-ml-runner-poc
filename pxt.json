@@ -1,6 +1,6 @@
 {
     "name": "ml-runner-poc",
-    "version": "0.3.4",
+    "version": "0.3.5",
     "description": "Experimental extension to run ML4F models in micro:bit MakeCode",
     "dependencies": {
         "core": "*"
