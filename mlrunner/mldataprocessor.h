@@ -44,6 +44,7 @@ typedef struct {
     MldpReturn_t (*recordData)(const float *samples, const int elements);
     bool (*isDataReady)(void);
     float* (*getProcessedData)(void);
+    size_t (*getProcessedDataSize)(void);
 } MlDataProcessor_t;
 
 extern MlDataProcessor_t mlDataProcessor;

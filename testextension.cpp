@@ -19,6 +19,7 @@
 #endif
 
 namespace testrunner {
+    static ml_actions_t *actions = NULL;
     static bool initialised = false;
     static const uint16_t ML_CODAL_TIMER_VALUE = 1;
 
@@ -39,39 +40,49 @@ namespace testrunner {
     void runModel() {
         if (!initialised) return;
 
+        ml_predictions_t *predictions = ml_allocatePredictions();
+        if (predictions == NULL) {
+            DEBUG_PRINT("Failed to allocate memory for predictions\n");
+            uBit.panic(TEST_RUNNER_ERROR + 9);
+        }
+
+        unsigned int time_start = system_timer_current_time_us();
+
         float *modelData = mlDataProcessor.getProcessedData();
         if (modelData == NULL) {
             DEBUG_PRINT("Failed to processed data for the model\n");
             uBit.panic(TEST_RUNNER_ERROR + 10);
         }
-        ml_predictions_t *predictions = ml_allocatePredictions();
-        bool success = ml_predict(modelData, predictions);
+
+        unsigned int time_mid = system_timer_current_time_us();
+
+        bool success = ml_predict(
+            modelData, mlDataProcessor.getProcessedDataSize(), actions, predictions);
         if (!success) {
             DEBUG_PRINT("Failed to run model\n");
             uBit.panic(TEST_RUNNER_ERROR + 11);
         }
 
-        DEBUG_PRINT("Prediction:\n");
-        DEBUG_PRINT("\tMax overall: %d %s\n",
-                    predictions->max_index,
-                    predictions->prediction[predictions->max_index].action.label);
-        if (predictions->prediction_index >= 0) {
-            DEBUG_PRINT("\tMax above threshold: %d %s\n",
-                        predictions->prediction_index,
-                        predictions->prediction[predictions->prediction_index].action.label);
+        unsigned int time_end = system_timer_current_time_us();
+
+        DEBUG_PRINT("Prediction (%d micros + %d micros): ",
+                    time_mid - time_start, time_end - time_mid);
+        if (predictions->index >= 0) {
+            DEBUG_PRINT("%d %s\n",
+                        predictions->index,
+                        actions->action[predictions->index].label);
         } else {
-            DEBUG_PRINT("\tMax above threshold: None\n");
+            DEBUG_PRINT("None\n");
         }
-        DEBUG_PRINT("\tLabel[predicted][threshold]: ");
-        for (size_t i = 0; i < predictions->len; i++) {
-            DEBUG_PRINT(" %s[%d][%d]",
-                        predictions->prediction[i].action.label,
-                        (int)(predictions->prediction[i].prediction * 100),
-                        (int)(predictions->prediction[i].action.threshold * 100));
+        DEBUG_PRINT("\tPredictions:");
+        for (size_t i = 0; i < actions->len; i++) {
+            DEBUG_PRINT(" %s [%d]",
+                        actions->action[i].label,
+                        (int)(predictions->prediction[i] * 100));
         }
         DEBUG_PRINT("\n\n");
 
-        MicroBitEvent evt(TEST_RUNNER_ID_INFERENCE, predictions->prediction_index + 2);
+        MicroBitEvent evt(TEST_RUNNER_ID_INFERENCE, predictions->index + 2);
 
         free(predictions);
     }
@@ -161,7 +172,7 @@ namespace testrunner {
             uBit.panic(TEST_RUNNER_ERROR + 6);
         }
 
-        ml_actions_t *actions = ml_allocateActions();
+        actions = ml_allocateActions();
         if (actions == NULL) {
             DEBUG_PRINT("Failed to allocate memory for actions\n");
             uBit.panic(TEST_RUNNER_ERROR + 7);
@@ -171,11 +182,10 @@ namespace testrunner {
             DEBUG_PRINT("Failed to retrieve actions\n");
             uBit.panic(TEST_RUNNER_ERROR + 8);
         }
-        DEBUG_PRINT("\tActions:\n");
+        DEBUG_PRINT("\tActions (%d):\n", actions->len);
         for (size_t i = 0; i < actions->len; i++) {
-            DEBUG_PRINT("\t\tAction '%s' threshold: %d\n", actions->action[i].label, (int)(actions->action[i].threshold * 100));
+            DEBUG_PRINT("\t\t'%s' threshold = %d%%\n", actions->action[i].label, (int)(actions->action[i].threshold * 100));
         }
-        free(actions);
 
         const MlDataProcessorConfig_t mlDataConfig = {
             .samples = samplesLen,

@@ -67,16 +67,10 @@ typedef struct ml_labels_s {
     const char **labels;
 } ml_labels_t;
 
-typedef struct ml_prediction_s {
-    ml_action_t action;
-    float prediction;
-} ml_prediction_t;
-
 typedef struct ml_predictions_s {
-    int max_index;
-    int prediction_index;
+    int index;
     size_t len;
-    ml_prediction_t prediction[];
+    float prediction[];
 } ml_predictions_t;
 
 /**
@@ -85,7 +79,7 @@ typedef struct ml_predictions_s {
  * @param model_address The start address of the model.
  * @return True if the model is valid and set, False otherwise.
  */
-bool ml_setModel(void *model_address);
+bool ml_setModel(const void *model_address);
 
 /**
  * @brief Check if a model is present.
@@ -127,6 +121,14 @@ int ml_getSampleDimensions();
 int ml_getInputLength();
 
 /**
+ * @brief Get the output length of the model.
+ *
+ * @return The number of output elements produced by the model.
+ *         Or -1 if the model is not present.
+ */
+int ml_getOutputLength();
+
+/**
  * @brief Get the model labels.
  *
  * The label pointers point directly to the strings stored in flash.
@@ -165,15 +167,44 @@ bool ml_getActions(ml_actions_t *actions_out);
  *
  * @return A pointer to a ml_predictions_t object to store the predictions.
  */
-ml_predictions_t* ml_allocatePredictions();
+ml_predictions_t *ml_allocatePredictions();
 
 /**
- * @brief Run the model inference and return the output predictions.
+ * @brief Run the model and return the index for the predicted action.
+ *
+ * @param actions The actions to use for the prediction.
+ * @param input The input data for the model.
+ * @param in_len The length of the input data.
+ * @return The index of the predicted action.
+ *        Or -1 if the model is not present, the actions or input length
+ *        doesn't match, or the prediction failed.
+ */
+bool ml_predict(const float *input, const int in_len, const ml_actions_t *actions, ml_predictions_t *predictions_out);
+
+/**
+ * @brief Run the model and return the individual predictions for each action.
  *
  * @param input The input data for the model.
- * @return A pointer to a ml_prediction_t object containing the predictions.
+ * @param in_len The length of the input data.
+ * @param predictions_out An array of floats to store the results.
+ * @param out_len The length of the predictions_out array.
+ * @return True if the model is present and the model run was successful,
+ *         False otherwise.
  */
-bool ml_predict(const float *input, ml_predictions_t *predictions_out);
+bool ml_runModel(const float *input, const int in_len, float* predictions_out, const int out_len);
+
+/**
+ * @brief Calculate the overall prediction based on the actions thresholds.
+ *
+ * @param actions The actions to use for the prediction, which include
+ *                their individual thresholds.
+ * @param predictions The predictions for each individual action.
+ * @param len The length of the predictions array.
+ * @return The index of the predicted action.
+ *        Or -1 if the model is not present, the actions or predictions length
+ *        doesn't match, or the prediction failed.
+ */
+int ml_calcPrediction(const ml_actions_t *actions, const float* predictions, const int len);
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -12,7 +12,7 @@ static uint32_t* MODEL_ADDRESS = NULL;
 /**
  * @return True if the model header is valid, False otherwise.
  */
-static bool is_model_valid(void* model_address) {
+static bool is_model_valid(const void* model_address) {
     ml_model_header_t *model_header = (ml_model_header_t *)model_address;
     if (model_header->magic0 != MODEL_HEADER_MAGIC0) {
         return false;
@@ -50,7 +50,7 @@ static ml4f_header_t* get_ml4f_model() {
 /*****************************************************************************/
 /* Public API                                                                */
 /*****************************************************************************/
-bool ml_setModel(void *model_address) {
+bool ml_setModel(const void *model_address) {
     // Check if the model is valid
     if (!is_model_valid(model_address)) {
         return false;
@@ -93,6 +93,14 @@ int ml_getInputLength() {
         return -1;
     }
     return ml4f_shape_elements(ml4f_input_shape(ml4f_model));
+}
+
+int ml_getOutputLength() {
+    ml4f_header_t *ml4f_model = get_ml4f_model();
+    if (ml4f_model == NULL) {
+        return -1;
+    }
+    return ml4f_shape_elements(ml4f_output_shape(ml4f_model));
 }
 
 // TODO: Remove this function and use ml_getLabels instead
@@ -217,73 +225,89 @@ bool ml_getActions(ml_actions_t *actions_out) {
     return true;
 }
 
-ml_predictions_t* ml_allocatePredictions() {
-    const ml_model_header_t* const model_header = (ml_model_header_t*)MODEL_ADDRESS;
-    if (model_header == NULL) {
+ml_predictions_t *ml_allocatePredictions() {
+    int output_size = ml_getOutputLength();
+    if (output_size <= 0) {
         return NULL;
     }
-
-    ml_predictions_t *predictions = (ml_predictions_t *)malloc(
-            sizeof(ml_predictions_t) + sizeof(ml_prediction_t) * model_header->number_of_actions);
+    ml_predictions_t *predictions = (ml_predictions_t *)calloc(
+        1, sizeof(ml_predictions_t) + sizeof(float) * output_size);
     if (predictions == NULL) {
         return NULL;
     }
-    predictions->len = model_header->number_of_actions;
-    return predictions;
+    predictions->index = -1;
+    predictions->len = output_size;
 
+    return predictions;
 }
 
-bool ml_predict(const float *input, ml_predictions_t *predictions_out) {
-    // Assuming the model is the same address we can cache the actions
-    static ml_actions_t *actions = NULL;
-    static ml4f_header_t *ml4f_model = NULL;
-
-    if (actions == NULL) {
-        free(actions);
-        actions = ml_allocateActions();
-        if (actions == NULL) return false;
-        const bool getActionsSuccess = ml_getActions(actions);
-        if (!getActionsSuccess) return false;
-
-        ml4f_model = get_ml4f_model();
-    }
-    if (ml4f_model == NULL) {
-        free(actions);
-        actions = NULL;
+bool ml_predict(const float *input, const int in_len, const ml_actions_t *actions, ml_predictions_t *predictions_out) {
+    if (input == NULL || in_len <= 0 || actions == NULL || predictions_out == NULL) {
         return false;
     }
 
-    // Check the output predictions size is correct
-    if (predictions_out->len != actions->len) {
+    int model_output_len = ml_getOutputLength();
+    if (model_output_len <= 0 ||
+            model_output_len != (int)actions->len ||
+            model_output_len != (int)predictions_out->len) {
         return false;
     }
 
-    // Run the model inference and obtain the predictions
-    float ml4f_output[predictions_out->len];
-    int r = ml4f_full_invoke(ml4f_model, input, ml4f_output);
+    bool success = ml_runModel(input, in_len, &predictions_out->prediction, predictions_out->len);
+    if (!success) {
+        return false;
+    }
+    predictions_out->index = ml_calcPrediction(actions, &predictions_out->prediction, predictions_out->len);
+
+    return true;
+}
+
+
+bool ml_runModel(const float *input, const int in_len, float* individual_predictions, const int out_len) {
+    if (individual_predictions == NULL) {
+        return false;
+    }
+
+    int model_input_len = ml_getInputLength();
+    if (model_input_len <= 0 || model_input_len != in_len) {
+        return false;
+    }
+    int model_output_len = ml_getOutputLength();
+    if (model_output_len <= 0 || model_output_len != out_len) {
+        return false;
+    }
+
+    ml4f_header_t *ml4f_model = get_ml4f_model();
+    int r = ml4f_full_invoke(ml4f_model, input, individual_predictions);
     if (r != 0) {
-        return NULL;
-    }
-
-    // Populate output predictions
-    float output_above_threshold[predictions_out->len];
-    for (size_t i = 0; i < predictions_out->len; i++) {
-        predictions_out->prediction[i].action.threshold = actions->action[i].threshold;
-        predictions_out->prediction[i].action.label = actions->action[i].label;
-        predictions_out->prediction[i].prediction = ml4f_output[i];
-        if (ml4f_output[i] >= actions->action[i].threshold) {
-            output_above_threshold[i] = ml4f_output[i];
-        } else {
-            output_above_threshold[i] = 0.0f;
-        }
-    }
-    predictions_out->max_index = ml4f_argmax(ml4f_output, predictions_out->len);
-    predictions_out->prediction_index = ml4f_argmax(output_above_threshold, predictions_out->len);
-
-    // If the prediction_index prediction is 0.0, then none of the predictions were above the threshold
-    if (output_above_threshold[predictions_out->prediction_index] == 0.0f) {
-        predictions_out->prediction_index = -1;
+        return false;
     }
 
     return true;
+}
+
+int ml_calcPrediction(const ml_actions_t *actions, const float* predictions, const int len) {
+    if (actions == NULL || predictions == NULL || len <= 0 || len != (int)actions->len) {
+        return -1;
+    }
+
+    float predictions_above_threshold[len];
+    for (int i = 0; i < len; i++) {
+        if (predictions[i] >= actions->action[i].threshold) {
+            predictions_above_threshold[i] = predictions[i];
+        } else {
+            predictions_above_threshold[i] = 0.0f;
+        }
+    }
+    int max_index = ml4f_argmax(predictions_above_threshold, len);
+    if (max_index < 0 || max_index >= len) {
+        return -1;
+    }
+
+    // If the max predictionn is 0, then none were above the threshold
+    if (predictions_above_threshold[max_index] == 0.0f) {
+        max_index = -1;
+    }
+
+    return max_index;
 }

@@ -84,12 +84,17 @@ float* exampleDataProcessor_getProcessedData() {
     return accData;
 }
 
+size_t exampleDataProcessor_getProcessedDataSize() {
+    return accDataSize;
+}
+
 MlDataProcessor_t mlDataProcessor = {
     .init = exampleDataProcessor_init,
     .deinit = exampleDataProcessor_deinit,
     .recordData = exampleDataProcessor_recordData,
     .isDataReady = exampleDataProcessor_isDataReady,
     .getProcessedData = exampleDataProcessor_getProcessedData,
+    .getProcessedDataSize = exampleDataProcessor_getProcessedDataSize,
 };
 
 #endif // DEVICE_MLRUNNER_USE_EXAMPLE_PROCESSOR

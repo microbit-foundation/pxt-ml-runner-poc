@@ -143,10 +143,17 @@ float* filterDataProcessor_getProcessedData() {
     return output_data;
 }
 
+size_t filterDataProcessor_getProcessedDataSize() {
+    if (!initialised) return 0;
+
+    return output_length;
+}
+
 MlDataProcessor_t mlDataProcessor = {
     .init = filterDataProcessor_init,
     .deinit = filterDataProcessor_deinit,
     .recordData = filterDataProcessor_recordData,
     .isDataReady = filterDataProcessor_isDataReady,
-    .getProcessedData = filterDataProcessor_getProcessedData
+    .getProcessedData = filterDataProcessor_getProcessedData,
+    .getProcessedDataSize = filterDataProcessor_getProcessedDataSize,
 };
