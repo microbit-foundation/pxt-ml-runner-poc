@@ -53,6 +53,6 @@ jobs:
 
     - name: Publish
       run: npm publish
-      if: github.ref == 'refs/heads/main' || github.event_name == 'release' && github.event.action == 'created'
+      if: github.event_name == 'release' && github.event.action == 'created'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
