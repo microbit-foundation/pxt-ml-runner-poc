@@ -20,6 +20,7 @@
 
 namespace testrunner {
     static ml_actions_t *actions = NULL;
+    static ml_predictions_t *predictions = NULL;
     static bool initialised = false;
     static const uint16_t ML_CODAL_TIMER_VALUE = 1;
 
@@ -40,18 +41,12 @@ namespace testrunner {
     void runModel() {
         if (!initialised) return;
 
-        ml_predictions_t *predictions = ml_allocatePredictions();
-        if (predictions == NULL) {
-            DEBUG_PRINT("Failed to allocate memory for predictions\n");
-            uBit.panic(TEST_RUNNER_ERROR + 9);
-        }
-
         unsigned int time_start = system_timer_current_time_us();
 
         float *modelData = mlDataProcessor.getProcessedData();
         if (modelData == NULL) {
             DEBUG_PRINT("Failed to processed data for the model\n");
-            uBit.panic(TEST_RUNNER_ERROR + 10);
+            uBit.panic(TEST_RUNNER_ERROR + 21);
         }
 
         unsigned int time_mid = system_timer_current_time_us();
@@ -60,7 +55,7 @@ namespace testrunner {
             modelData, mlDataProcessor.getProcessedDataSize(), actions, predictions);
         if (!success) {
             DEBUG_PRINT("Failed to run model\n");
-            uBit.panic(TEST_RUNNER_ERROR + 11);
+            uBit.panic(TEST_RUNNER_ERROR + 22);
         }
 
         unsigned int time_end = system_timer_current_time_us();
@@ -74,7 +69,7 @@ namespace testrunner {
         } else {
             DEBUG_PRINT("None\n");
         }
-        DEBUG_PRINT("\tPredictions:");
+        DEBUG_PRINT("\tIndividual:");
         for (size_t i = 0; i < actions->len; i++) {
             DEBUG_PRINT(" %s [%d]",
                         actions->action[i].label,
@@ -83,8 +78,6 @@ namespace testrunner {
         DEBUG_PRINT("\n\n");
 
         MicroBitEvent evt(TEST_RUNNER_ID_INFERENCE, predictions->index + 2);
-
-        free(predictions);
     }
 
     void recordAccData(MicroBitEvent) {
@@ -172,19 +165,39 @@ namespace testrunner {
             uBit.panic(TEST_RUNNER_ERROR + 6);
         }
 
+        const int modelOutputLen = ml_getInputLength();
+        DEBUG_PRINT("\tModel output length: %d\n", modelOutputLen);
+        if (modelOutputLen <= 0) {
+            DEBUG_PRINT("Model output length invalid\n");
+            uBit.panic(TEST_RUNNER_ERROR + 7);
+        }
+
+        const int modelArenaSize = ml_getArenaSize();
+        DEBUG_PRINT("\tModel arena size: %d bytes\n", modelArenaSize);
+        if (modelArenaSize <= 0) {
+            DEBUG_PRINT("Model arena size length invalid\n");
+            uBit.panic(TEST_RUNNER_ERROR + 8);
+        }
+
         actions = ml_allocateActions();
         if (actions == NULL) {
             DEBUG_PRINT("Failed to allocate memory for actions\n");
-            uBit.panic(TEST_RUNNER_ERROR + 7);
+            uBit.panic(TEST_RUNNER_ERROR + 9);
         }
         const bool getActionsSuccess = ml_getActions(actions);
         if (!getActionsSuccess) {
             DEBUG_PRINT("Failed to retrieve actions\n");
-            uBit.panic(TEST_RUNNER_ERROR + 8);
+            uBit.panic(TEST_RUNNER_ERROR + 10);
         }
         DEBUG_PRINT("\tActions (%d):\n", actions->len);
         for (size_t i = 0; i < actions->len; i++) {
             DEBUG_PRINT("\t\t'%s' threshold = %d%%\n", actions->action[i].label, (int)(actions->action[i].threshold * 100));
+        }
+
+        predictions = ml_allocatePredictions();
+        if (predictions == NULL) {
+            DEBUG_PRINT("Failed to allocate memory for predictions\n");
+            uBit.panic(TEST_RUNNER_ERROR + 11);
         }
 
         const MlDataProcessorConfig_t mlDataConfig = {
@@ -198,7 +211,7 @@ namespace testrunner {
         if (mlInitResult != MLDP_SUCCESS) {
             DEBUG_PRINT("Failed to initialise ML data processor (%d)\n", mlInitResult);
             // TODO: Check error type and set panic value accordingly
-            uBit.panic(TEST_RUNNER_ERROR + 8);
+            uBit.panic(TEST_RUNNER_ERROR + 12);
         }
 
         // Set up background timer to collect data and run model

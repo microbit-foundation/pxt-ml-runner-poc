@@ -89,6 +89,14 @@ bool ml_setModel(const void *model_address);
 bool ml_isModelPresent();
 
 /**
+ * @brief Get the arena size that has been allocated to run the loaded model.
+ *
+ * @return The size, in bytes, of the arena required for the model.
+ *         Or -1 if the model is not present.
+ */
+int ml_getArenaSize();
+
+/**
  * @brief Get the period between samples required for the model.
  *
  * @return The period between samples required for the model.
@@ -179,7 +187,7 @@ ml_predictions_t *ml_allocatePredictions();
  *        Or -1 if the model is not present, the actions or input length
  *        doesn't match, or the prediction failed.
  */
-bool ml_predict(const float *input, const int in_len, const ml_actions_t *actions, ml_predictions_t *predictions_out);
+bool ml_predict(const float *input, const size_t in_len, const ml_actions_t *actions, ml_predictions_t *predictions_out);
 
 /**
  * @brief Run the model and return the individual predictions for each action.
@@ -191,7 +199,7 @@ bool ml_predict(const float *input, const int in_len, const ml_actions_t *action
  * @return True if the model is present and the model run was successful,
  *         False otherwise.
  */
-bool ml_runModel(const float *input, const int in_len, float* predictions_out, const int out_len);
+bool ml_runModel(const float *input, const size_t in_len, float* predictions_out, const size_t out_len);
 
 /**
  * @brief Calculate the overall prediction based on the actions thresholds.
@@ -204,7 +212,7 @@ bool ml_runModel(const float *input, const int in_len, float* predictions_out, c
  *        Or -1 if the model is not present, the actions or predictions length
  *        doesn't match, or the prediction failed.
  */
-int ml_calcPrediction(const ml_actions_t *actions, const float* predictions, const int len);
+int ml_calcPrediction(const ml_actions_t *actions, const float* predictions, const size_t len);
 
 #ifdef __cplusplus
 }  // extern "C"

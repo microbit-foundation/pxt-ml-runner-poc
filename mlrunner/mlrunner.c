@@ -4,7 +4,10 @@
 #include "mlrunner.h"
 
 // Pointer to the model in flash
-static uint32_t* MODEL_ADDRESS = NULL;
+static uint32_t *MODEL_ADDRESS = NULL;
+static uint8_t *model_arena = NULL;
+static size_t input_length = 0;
+static size_t output_length = 0;
 
 /*****************************************************************************/
 /* Private API                                                               */
@@ -12,7 +15,7 @@ static uint32_t* MODEL_ADDRESS = NULL;
 /**
  * @return True if the model header is valid, False otherwise.
  */
-static bool is_model_valid(const void* model_address) {
+static bool is_model_valid(const void *model_address) {
     ml_model_header_t *model_header = (ml_model_header_t *)model_address;
     if (model_header->magic0 != MODEL_HEADER_MAGIC0) {
         return false;
@@ -39,8 +42,8 @@ static bool is_model_valid(const void* model_address) {
  *
  * @return The ML4F model or NULL if the model is not present or invalid.
  */
-static ml4f_header_t* get_ml4f_model() {
-    if (MODEL_ADDRESS == NULL || !is_model_valid(MODEL_ADDRESS)) {
+static inline ml4f_header_t* get_ml4f_model() {
+    if (MODEL_ADDRESS == NULL) {
         return NULL;
     }
     ml_model_header_t *model_header = (ml_model_header_t *)MODEL_ADDRESS;
@@ -56,11 +59,39 @@ bool ml_setModel(const void *model_address) {
         return false;
     }
     MODEL_ADDRESS = (uint32_t *)model_address;
+
+    // Allocate the model arena
+    int model_arena_size = ml_getArenaSize();
+    if (model_arena_size <= 0) {
+        MODEL_ADDRESS = NULL;
+        return false;
+    }
+    if (model_arena != NULL) {
+        free(model_arena);
+    }
+    model_arena = malloc(model_arena_size);
+    if (model_arena == NULL) {
+        MODEL_ADDRESS = NULL;
+        return false;
+    }
+
+    // Set the cached input and output lengths
+    ml_getInputLength();
+    ml_getOutputLength();
+
     return true;
 }
 
 bool ml_isModelPresent() {
     return MODEL_ADDRESS != NULL;
+}
+
+int ml_getArenaSize() {
+    ml4f_header_t *ml4f_model = get_ml4f_model();
+    if (ml4f_model == NULL) {
+        return -1;
+    }
+    return ml4f_model->arena_bytes;
 }
 
 int ml_getSamplesPeriod() {
@@ -88,19 +119,27 @@ int ml_getSampleDimensions() {
 }
 
 int ml_getInputLength() {
-    ml4f_header_t *ml4f_model = get_ml4f_model();
-    if (ml4f_model == NULL) {
-        return -1;
+    if (input_length == 0) {
+        ml4f_header_t *ml4f_model = get_ml4f_model();
+        if (ml4f_model == NULL) {
+            return -1;
+        }
+        input_length = ml4f_shape_elements(ml4f_input_shape(ml4f_model));
     }
-    return ml4f_shape_elements(ml4f_input_shape(ml4f_model));
+
+    return input_length;
 }
 
 int ml_getOutputLength() {
-    ml4f_header_t *ml4f_model = get_ml4f_model();
-    if (ml4f_model == NULL) {
-        return -1;
+    if (output_length == 0) {
+        ml4f_header_t *ml4f_model = get_ml4f_model();
+        if (ml4f_model == NULL) {
+            return -1;
+        }
+        output_length = ml4f_shape_elements(ml4f_output_shape(ml4f_model));
     }
-    return ml4f_shape_elements(ml4f_output_shape(ml4f_model));
+
+    return output_length;
 }
 
 // TODO: Remove this function and use ml_getLabels instead
@@ -241,44 +280,29 @@ ml_predictions_t *ml_allocatePredictions() {
     return predictions;
 }
 
-bool ml_predict(const float *input, const int in_len, const ml_actions_t *actions, ml_predictions_t *predictions_out) {
-    if (input == NULL || in_len <= 0 || actions == NULL || predictions_out == NULL) {
+bool ml_predict(const float *input, const size_t in_len, const ml_actions_t *actions, ml_predictions_t *predictions_out) {
+    if (actions == NULL || actions->len != output_length ||
+            predictions_out == NULL || predictions_out->len != output_length) {
         return false;
     }
 
-    int model_output_len = ml_getOutputLength();
-    if (model_output_len <= 0 ||
-            model_output_len != (int)actions->len ||
-            model_output_len != (int)predictions_out->len) {
-        return false;
-    }
-
-    bool success = ml_runModel(input, in_len, &predictions_out->prediction, predictions_out->len);
+    bool success = ml_runModel(input, in_len, (float *)&predictions_out->prediction, output_length);
     if (!success) {
         return false;
     }
-    predictions_out->index = ml_calcPrediction(actions, &predictions_out->prediction, predictions_out->len);
+    predictions_out->index = ml_calcPrediction(actions, (float *)&predictions_out->prediction, output_length);
 
     return true;
 }
 
 
-bool ml_runModel(const float *input, const int in_len, float* individual_predictions, const int out_len) {
-    if (individual_predictions == NULL) {
-        return false;
-    }
-
-    int model_input_len = ml_getInputLength();
-    if (model_input_len <= 0 || model_input_len != in_len) {
-        return false;
-    }
-    int model_output_len = ml_getOutputLength();
-    if (model_output_len <= 0 || model_output_len != out_len) {
+bool ml_runModel(const float *input, const size_t in_len, float* individual_predictions, const size_t out_len) {
+    if (input == NULL || individual_predictions == NULL || input_length != in_len || output_length != out_len) {
         return false;
     }
 
     ml4f_header_t *ml4f_model = get_ml4f_model();
-    int r = ml4f_full_invoke(ml4f_model, input, individual_predictions);
+    int r = ml4f_full_invoke_arena(ml4f_model, model_arena, input, individual_predictions);
     if (r != 0) {
         return false;
     }
@@ -286,13 +310,13 @@ bool ml_runModel(const float *input, const int in_len, float* individual_predict
     return true;
 }
 
-int ml_calcPrediction(const ml_actions_t *actions, const float* predictions, const int len) {
-    if (actions == NULL || predictions == NULL || len <= 0 || len != (int)actions->len) {
+int ml_calcPrediction(const ml_actions_t *actions, const float* predictions, const size_t len) {
+    if (actions == NULL || predictions == NULL || len != actions->len) {
         return -1;
     }
 
     float predictions_above_threshold[len];
-    for (int i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; i++) {
         if (predictions[i] >= actions->action[i].threshold) {
             predictions_above_threshold[i] = predictions[i];
         } else {
@@ -300,10 +324,9 @@ int ml_calcPrediction(const ml_actions_t *actions, const float* predictions, con
         }
     }
     int max_index = ml4f_argmax(predictions_above_threshold, len);
-    if (max_index < 0 || max_index >= len) {
+    if (max_index < 0) {
         return -1;
     }
-
     // If the max predictionn is 0, then none were above the threshold
     if (predictions_above_threshold[max_index] == 0.0f) {
         max_index = -1;

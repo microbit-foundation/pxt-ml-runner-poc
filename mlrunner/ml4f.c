@@ -124,6 +124,17 @@ int ml4f_full_invoke(const ml4f_header_t *model, const float *input, float *outp
     return r;
 }
 
+int ml4f_full_invoke_arena(const ml4f_header_t *model, uint8_t *arena, const float *input, float *output) {
+    if (!ml4f_is_valid_header(model))
+        return -1;
+    memcpy(arena + model->input_offset, input,
+           ml4f_shape_size(ml4f_input_shape(model), model->input_type));
+    int r = ml4f_invoke(model, arena);
+    memcpy(output, arena + model->output_offset,
+           ml4f_shape_size(ml4f_output_shape(model), model->output_type));
+    return r;
+}
+
 int ml4f_full_invoke_argmax(const ml4f_header_t *model, const float *input) {
     if (!ml4f_is_valid_header(model))
         return -1;
