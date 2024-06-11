@@ -18,6 +18,40 @@
 #define DEBUG_PRINT(...)
 #endif
 
+
+static inline void start_ticks_cpu() {
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+}
+
+static inline uint32_t ticks_cpu() {
+    return DWT->CYCCNT;
+}
+
+static uint32_t ticks[10];
+static uint32_t ticks_index = 0;
+static bool ticks_start_average = false;
+static inline uint32_t calcTicks(uint32_t ticks_start, uint32_t ticks_end) {
+    ticks[ticks_index] = ticks_end - ticks_start;
+    ticks_index++;
+    if (ticks_index >= 9) {
+        ticks_start_average = true;
+        ticks_index = 0;
+    }
+
+    if (!ticks_start_average) {
+        return 0;
+    }
+
+    uint32_t ticksAverage = 0;
+    for (size_t i = 0; i < 10; i++) {
+        ticksAverage += ticks[i];
+    }
+    return ticksAverage / 10;
+}
+
+
 namespace testrunner {
     static ml_actions_t *actions = NULL;
     static ml_predictions_t *predictions = NULL;
@@ -43,7 +77,9 @@ namespace testrunner {
 
         unsigned int time_start = system_timer_current_time_us();
 
+        int32_t ticks_start = ticks_cpu() & 0x7FFFFFFF;
         float *modelData = mlDataProcessor.getProcessedData();
+        int32_t ticks_end = ticks_cpu() & 0x7FFFFFFF;
         if (modelData == NULL) {
             DEBUG_PRINT("Failed to processed data for the model\n");
             uBit.panic(TEST_RUNNER_ERROR + 21);
@@ -60,8 +96,8 @@ namespace testrunner {
 
         unsigned int time_end = system_timer_current_time_us();
 
-        DEBUG_PRINT("Prediction (%d micros + %d micros): ",
-                    time_mid - time_start, time_end - time_mid);
+        DEBUG_PRINT("Prediction (%d micros + %d micros, %d ticks): ",
+                    time_mid - time_start, time_end - time_mid, calcTicks(ticks_start, ticks_end));
         if (predictions->index >= 0) {
             DEBUG_PRINT("%d %s\n",
                         predictions->index,
@@ -217,6 +253,8 @@ namespace testrunner {
         // Set up background timer to collect data and run model
         uBit.messageBus.listen(TEST_RUNNER_ID_TIMER, ML_CODAL_TIMER_VALUE, &recordAccData, MESSAGE_BUS_LISTENER_DROP_IF_BUSY);
         uBit.timer.eventEvery(samplesPeriodMillisec, TEST_RUNNER_ID_TIMER, ML_CODAL_TIMER_VALUE);
+
+        start_ticks_cpu();
 
         initialised = true;
 

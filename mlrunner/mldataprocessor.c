@@ -69,11 +69,13 @@ MldpReturn_t filterStdDev(const float *data_in, const int in_size, float *data_o
     }
 
     float std = 0;
+    float f = 0;
     for (int i = 0; i < in_size; i++) {
-        std += (data_in[i] - mean) * (data_in[i] - mean);
+        f = data_in[i] - mean;
+        std += f * f;
     }
     std /= in_size;
-    *data_out = sqrt(std);
+    *data_out = sqrtf(std);
 
     return MLDP_SUCCESS;
 }
@@ -112,8 +114,8 @@ MldpReturn_t filterPeaks(const float *data_in, const int in_size, float *data_ou
     stdFilter[lag - 1] = stdDev_lag;
 
     for (int i = lag; i < in_size; i++) {
-        if (fabs(data_in[i] - avgFilter[i - 1]) > 0.1 &&
-            fabs(data_in[i] - avgFilter[i - 1]) > threshold * stdFilter[i - 1]
+        if (fabsf(data_in[i] - avgFilter[i - 1]) > 0.1f &&
+            fabsf(data_in[i] - avgFilter[i - 1]) > threshold * stdFilter[i - 1]
         ) {
             if (data_in[i] > avgFilter[i - 1]) {
                 signals[i] = +1; // positive signal
@@ -124,7 +126,7 @@ MldpReturn_t filterPeaks(const float *data_in, const int in_size, float *data_ou
                 signals[i] = -1; // negative signal
             }
             // make influence lower
-            filteredY[i] = influence * data_in[i] + (1 - influence) * filteredY[i - 1];
+            filteredY[i] = influence * data_in[i] + (1.0f - influence) * filteredY[i - 1];
         } else {
             signals[i] = 0; // no signal
             filteredY[i] = data_in[i];
@@ -151,7 +153,7 @@ MldpReturn_t filterTotalAcc(const float *data_in, const int in_size, float *data
 
     float total = 0;
     for (int i = 0; i < in_size; i++) {
-        total += fabs(data_in[i]);
+        total += fabsf(data_in[i]);
     }
     *data_out = total;
 
@@ -186,7 +188,7 @@ MldpReturn_t filterRms(const float *data_in, const int in_size, float *data_out,
     for (int i = 0; i < in_size; i++) {
         rms += data_in[i] * data_in[i];
     }
-    *data_out = sqrt(rms / in_size);
+    *data_out = sqrtf(rms / in_size);
 
     return MLDP_SUCCESS;
 }
