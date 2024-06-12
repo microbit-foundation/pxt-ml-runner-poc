@@ -1,4 +1,4 @@
-name: Header Generator Tests
+name: Header Generator
 
 on:
   release:
@@ -16,7 +16,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Build & Test TS lib
+    name: Build, test & publish TS lib
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -54,5 +54,6 @@ jobs:
     - name: Publish
       run: npm publish
       if: github.event_name == 'release' && github.event.action == 'created'
+      working-directory: ./header-gen
       env:
         NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
