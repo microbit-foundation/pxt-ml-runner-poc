@@ -1,6 +1,9 @@
 input.onButtonPressed(Button.A, function () {
     basic.clearScreen()
 })
+testrunner.onMlEvent(TestRunnerLabels.None, function () {
+    basic.clearScreen()
+})
 testrunner.onMlEvent(TestRunnerLabels.Shake, function () {
     basic.showString("S")
 })

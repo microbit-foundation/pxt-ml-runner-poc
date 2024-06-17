@@ -13,9 +13,11 @@
 
 
 static float **input_samples = NULL;
+static float *temp_buffer = NULL;
 static int sample_dimensions = 0;
 static int sample_length = 0;
 static int sample_index = 0;
+static bool buffer_filled = false;
 static float *output_data = NULL;
 static int output_length = 0;
 static MlDataFilters_t *filters = NULL;
@@ -58,7 +60,7 @@ MldpReturn_t filterDataProcessor_init(const MlDataProcessorConfig_t* config) {
         return MLDP_ERROR_ALLOC;
     }
 
-    // Allocate for each sample dimension
+    // Allocate for each sample dimension, and the temporary buffer
     sample_dimensions = config->dimensions;
     for (int i = 0; i < sample_dimensions; i++) {
         input_samples[i] = (float*)malloc(config->samples * sizeof(float));
@@ -66,6 +68,11 @@ MldpReturn_t filterDataProcessor_init(const MlDataProcessorConfig_t* config) {
             filterDataProcessor_deinit();
             return MLDP_ERROR_ALLOC;
         }
+    }
+    temp_buffer = (float*)malloc(config->samples * sizeof(float));
+    if (temp_buffer == NULL) {
+        filterDataProcessor_deinit();
+        return MLDP_ERROR_ALLOC;
     }
 
     // Copy the filter pointers
@@ -86,6 +93,7 @@ void filterDataProcessor_deinit() {
         free(input_samples[i]);
     }
     free(input_samples);
+    free(temp_buffer);
     free(output_data);
     free(filters);
     input_samples = NULL;
@@ -111,6 +119,7 @@ MldpReturn_t filterDataProcessor_recordData(const float* samples, const int elem
         sample_index++;
         if (sample_index >= sample_length) {
             sample_index = 0;
+            buffer_filled = true;
         }
     }
 
@@ -120,18 +129,22 @@ MldpReturn_t filterDataProcessor_recordData(const float* samples, const int elem
 bool filterDataProcessor_isDataReady() {
     if (!initialised) return false;
 
-    return sample_index == 0;
+    return buffer_filled;
 }
 
 float* filterDataProcessor_getProcessedData() {
     if (!initialised) return NULL;
+    if (!buffer_filled) return NULL;
 
     // Run all filters and save their output to output_data
     int output_i = 0;
     for (int filter_i = 0; filter_i < filter_size; filter_i++) {
         for (int dimension_i = 0; dimension_i < sample_dimensions; dimension_i++) {
+            const int elements_left = sample_length - sample_index;
+            memcpy(temp_buffer, &input_samples[dimension_i][sample_index], elements_left * sizeof(float));
+            memcpy(&temp_buffer[elements_left], input_samples[dimension_i], sample_index * sizeof(float));
             MldpReturn_t filter_result = filters[filter_i].filter(
-                input_samples[dimension_i], sample_length,
+                temp_buffer, sample_length,
                 &output_data[output_i], filters[filter_i].out_size
             );
             if (filter_result != MLDP_SUCCESS) {

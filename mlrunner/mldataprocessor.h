@@ -31,10 +31,10 @@ typedef struct {
 } MlDataFilters_t;
 
 typedef struct {
-    const int samples;
-    const int dimensions;
-    const int output_length;
-    const int filter_size;
+    const int samples;          // How many samples are needed to calculated the processed output
+    const int dimensions;       // How many dimensions each sample contains (e.g. x, y, z is 3 dimensions)
+    const int output_length;    // Expected number elements produced by the processed output, depends on filters
+    const int filter_size;      // How many filters in the *filters array
     const MlDataFilters_t *filters;
 } MlDataProcessorConfig_t;
 

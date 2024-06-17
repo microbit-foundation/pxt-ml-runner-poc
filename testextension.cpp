@@ -53,9 +53,11 @@ static inline uint32_t calcTicks(uint32_t ticks_start, uint32_t ticks_end) {
 
 
 namespace testrunner {
+    static bool initialised = false;
     static ml_actions_t *actions = NULL;
     static ml_predictions_t *predictions = NULL;
-    static bool initialised = false;
+    static int ml_sample_counts_per_prediction = 0;
+    static const int ML_PREDICTIONS_PER_SECOND = 4;
     static const uint16_t ML_CODAL_TIMER_VALUE = 1;
 
     // Order is important for the outputData as set in:
@@ -119,10 +121,11 @@ namespace testrunner {
     void recordAccData(MicroBitEvent) {
         if (!initialised) return;
 
+        const Sample3D accSample = uBit.accelerometer.getSample();
         const float accData[3] = {
-            uBit.accelerometer.getX() / 1000.0f,
-            uBit.accelerometer.getY() / 1000.0f,
-            uBit.accelerometer.getZ() / 1000.0f,
+            accSample.x / 1000.0f,
+            accSample.y / 1000.0f,
+            accSample.z / 1000.0f,
         };
         MldpReturn_t recordDataResult = mlDataProcessor.recordData(accData, 3);
         if (recordDataResult != MLDP_SUCCESS) {
@@ -130,11 +133,10 @@ namespace testrunner {
             return;
         }
 
-        if (mlDataProcessor.isDataReady()) {
-            // Stop firing timer events while running model and resume after
-            uBit.messageBus.ignore(TEST_RUNNER_ID_TIMER, ML_CODAL_TIMER_VALUE, &recordAccData);
+        // Run model every ml_sample_counts_per_prediction samples
+        static unsigned int samplesTaken = 0;
+        if (!(++samplesTaken % ml_sample_counts_per_prediction) && mlDataProcessor.isDataReady()) {
             runModel();
-            uBit.messageBus.listen(TEST_RUNNER_ID_TIMER, ML_CODAL_TIMER_VALUE, &recordAccData, MESSAGE_BUS_LISTENER_DROP_IF_BUSY);
         }
     }
 
@@ -235,6 +237,9 @@ namespace testrunner {
             DEBUG_PRINT("Failed to allocate memory for predictions\n");
             uBit.panic(TEST_RUNNER_ERROR + 11);
         }
+
+        // Using sampling period to calculate how samples have to run for the next model run
+        ml_sample_counts_per_prediction = (1000 / ML_PREDICTIONS_PER_SECOND) / samplesPeriodMillisec;
 
         const MlDataProcessorConfig_t mlDataConfig = {
             .samples = samplesLen,

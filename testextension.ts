@@ -19,7 +19,7 @@ namespace testrunner {
     //% block="on ML event %value"
     export function onMlEvent(mlEvent: TestRunnerLabels, body: () => void): void {
         startRunning();
-        control.onEvent(TestRunnerIds.TestRunnerInference, mlEvent, body)
+        control.onEvent(TestRunnerIds.TestRunnerInference, mlEvent, body, EventFlags.DropIfBusy)
     }
 
     /**
