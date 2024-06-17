@@ -52,8 +52,8 @@ jobs:
       working-directory: ./header-gen
 
     - name: Publish
-      run: npm publish
-      if: github.event_name == 'release' && github.event.action == 'created'
+      run: npm publish --dry-run
+      #if: github.event_name == 'release' && github.event.action == 'created'
       working-directory: ./header-gen
       env:
         NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
